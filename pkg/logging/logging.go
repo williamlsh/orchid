@@ -1,11 +1,27 @@
 package logging
 
 import (
+	"context"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+)
+
+// contextKey is a private string type to prevent collisions in the context map.
+type contextKey string
+
+// loggerKey points to the value in the context where the logger is stored.
+const loggerKey = contextKey("logger")
+
+var (
+	// defaultLogger is the default logger. It is initialized once per package
+	// include upon calling DefaultLogger.
+	defaultLogger     *zap.SugaredLogger
+	defaultLoggerOnce sync.Once
 )
 
 const (
@@ -139,4 +155,35 @@ func timeEncoder() zapcore.TimeEncoder {
 	return func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 		enc.AppendString(t.Format(time.RFC3339Nano))
 	}
+}
+
+// NewLoggerFromEnv creates a new logger from the environment. It consumes
+// LOG_LEVEL for determining the level and LOG_MODE for determining the output
+// parameters.
+func NewLoggerFromEnv() *zap.SugaredLogger {
+	level := os.Getenv("LOG_LEVEL")
+	development := strings.ToLower(strings.TrimSpace(os.Getenv("LOG_MODE"))) == "development"
+	return NewLogger(level, development)
+}
+
+// DefaultLogger returns the default logger for the package.
+func DefaultLogger() *zap.SugaredLogger {
+	defaultLoggerOnce.Do(func() {
+		defaultLogger = NewLoggerFromEnv()
+	})
+	return defaultLogger
+}
+
+// WithLogger creates a new context with the provided logger attached.
+func WithLogger(ctx context.Context, logger *zap.SugaredLogger) context.Context {
+	return context.WithValue(ctx, loggerKey, logger)
+}
+
+// FromContext returns the logger stored in the context. If no such logger
+// exists, a default logger is returned.
+func FromContext(ctx context.Context) *zap.SugaredLogger {
+	if logger, ok := ctx.Value(loggerKey).(*zap.SugaredLogger); ok {
+		return logger
+	}
+	return DefaultLogger()
 }
