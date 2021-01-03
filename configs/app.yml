@@ -1,0 +1,10 @@
+http:
+  port: 80
+database:
+  driver:
+  name:
+  username:
+  passwd:
+log: 
+  level: Debug
+  

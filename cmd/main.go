@@ -1,10 +1,19 @@
+/*
+ * @Descripttion:
+ * @version:
+ * @Author: dengdajun
+ * @Date: 2021-01-01 23:22:18
+ * @LastEditors: dengdajun
+ * @LastEditTime: 2021-01-03 04:00:42
+ */
 package main
 
 import (
 	"flag"
 
-	"github.com/ossm-org/orchid/pkg/logging"
-	"github.com/ossm-org/orchid/services/frontend"
+	"github.com/ossm-org/orchid/api"
+	. "github.com/ossm-org/orchid/internal"
+	"github.com/ossm-org/orchid/pkg"
 )
 
 var (
@@ -19,7 +28,7 @@ func main() {
 	flag.StringVar(&level, "level", "error", "Logging level")
 	flag.Parse()
 
-	logger := logging.NewLogger(level, dev)
-	server := frontend.NewServer(logger)
-	logger.Fatal(server.Run())
+	server := pkg.NewServer(port)
+	api.Rout(server.Root)
+	Logger.Fatal(server.Run())
 }
