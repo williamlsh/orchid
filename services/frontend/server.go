@@ -4,6 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/ossm-org/orchid/pkg/apis/auth"
+	"github.com/ossm-org/orchid/pkg/cache"
+	"github.com/ossm-org/orchid/pkg/email"
 	"go.uber.org/zap"
 )
 
@@ -11,13 +14,15 @@ import (
 type Server struct {
 	hostPort string
 	logger   *zap.SugaredLogger
+	cache    cache.Cache
 }
 
 // NewServer creates a new frontend.Server
-func NewServer(logger *zap.SugaredLogger) *Server {
+func NewServer(logger *zap.SugaredLogger, cache cache.Cache) *Server {
 	return &Server{
 		hostPort: "",
 		logger:   logger,
+		cache:    cache,
 	}
 }
 
@@ -27,8 +32,11 @@ func (s *Server) Run() error {
 	return http.ListenAndServe(s.hostPort, mux)
 }
 
+// createServeMux registers all routers.
 func (s *Server) createServeMux() http.Handler {
 	mux := mux.NewRouter()
-	mux.Handle("", http.HandlerFunc(nil))
+	mux.Handle("/signup", auth.NewSignUpper(s.logger, email.Config{}, s.cache))
+	mux.Handle("/signin", auth.NewSignInner(s.logger, s.cache, "", ""))
+	mux.Handle("/signout", auth.NewSignOuter(s.logger, s.cache))
 	return mux
 }

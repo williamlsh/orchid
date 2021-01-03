@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 
+	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/logging"
 	"github.com/ossm-org/orchid/services/frontend"
 )
@@ -20,6 +21,7 @@ func main() {
 	flag.Parse()
 
 	logger := logging.NewLogger(level, dev)
-	server := frontend.NewServer(logger)
+	cache := cache.New("", "", logger)
+	server := frontend.NewServer(logger, cache)
 	logger.Fatal(server.Run())
 }
