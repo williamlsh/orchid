@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/ossm-org/orchid/pkg/email"
@@ -44,6 +47,11 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !isEmailValid(reqBody.email) {
+		http.Error(w, ErrEmailInvalid.Error(), http.StatusNotAcceptable)
+		return
+	}
+
 	code := randString(12)
 	if err := s.cacheVerificationCode(code, reqBody.email); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
@@ -71,4 +79,23 @@ func randString(n int) string {
 
 func (s SignUpper) cacheVerificationCode(code, email string) error {
 	return s.cache.Set(verificationCodeKeyPrefix+":"+email, code, "EX", 10*time.Minute)
+}
+
+var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+// isEmailValid checks if the email provided passes the required structure
+// and length test. It also checks the domain has a valid MX record.
+func isEmailValid(e string) bool {
+	if len(e) < 3 || len(e) > 254 {
+		return false
+	}
+	if !emailRegex.MatchString(e) {
+		return false
+	}
+	parts := strings.Split(e, "@")
+	mx, err := net.LookupMX(parts[1])
+	if err != nil || len(mx) == 0 {
+		return false
+	}
+	return true
 }
