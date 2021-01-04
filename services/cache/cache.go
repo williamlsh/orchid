@@ -7,6 +7,7 @@ import (
 
 // Cache fullfills redis caching capabilities.
 type Cache interface {
+	Release()
 	Set(args ...interface{}) error
 	Get(args ...interface{}) (interface{}, error)
 	Delete(args ...interface{}) (int, error)
@@ -29,6 +30,10 @@ func New(logger *zap.SugaredLogger, config ConfigOptions) Cache {
 		logger: logger,
 		pool:   newPool(config.Addr, config.Passwd),
 	}
+}
+
+func (c cache) Release()  {
+	c.pool.Close()
 }
 
 func (c cache) Set(args ...interface{}) error {

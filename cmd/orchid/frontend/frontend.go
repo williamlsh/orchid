@@ -47,7 +47,11 @@ var FrontendCmd = &cobra.Command{
 
 		logger := logging.NewLogger("", false)
 		cache := cache.New(logger, cacheConfig)
+		defer cache.Release()
+
 		db := database.New(logger, dsn)
+		defer db.Pool.Close()
+
 		server := frontend.NewServer(logger, cache, db, frontendConfig)
 		return server.Run()
 	},
