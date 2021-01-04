@@ -17,11 +17,17 @@ type cache struct {
 	pool   *redis.Pool
 }
 
+// ConfigOptions includes redis config options.
+type ConfigOptions struct {
+	Addr   string
+	Passwd string
+}
+
 // New returns a new cache.
-func New(addr, passwd string, logger *zap.SugaredLogger) Cache {
+func New(logger *zap.SugaredLogger, config ConfigOptions) Cache {
 	return cache{
 		logger: logger,
-		pool:   newPool(addr, passwd),
+		pool:   newPool(config.Addr, config.Passwd),
 	}
 }
 

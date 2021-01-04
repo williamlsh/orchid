@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ossm-org/orchid/pkg/cache"
+	"github.com/ossm-org/orchid/services/cache"
 	"go.uber.org/zap"
 )
 

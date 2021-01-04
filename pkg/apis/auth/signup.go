@@ -1,14 +1,14 @@
 package auth
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"io"
+	"math/rand"
 	"net/http"
 	"time"
 
-	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/email"
+	"github.com/ossm-org/orchid/services/cache"
 	"go.uber.org/zap"
 )
 
@@ -17,12 +17,12 @@ const verificationCodeKeyPrefix = "verification_code"
 // SignUpper implements a sign up handler.
 type SignUpper struct {
 	logger   *zap.SugaredLogger
-	mailConf email.Config
+	mailConf email.ConfigOptions
 	cache    cache.Cache
 }
 
 // NewSignUpper returns a new SignUpper.
-func NewSignUpper(logger *zap.SugaredLogger, mailConf email.Config, cache cache.Cache) SignUpper {
+func NewSignUpper(logger *zap.SugaredLogger, cache cache.Cache, mailConf email.ConfigOptions) SignUpper {
 	return SignUpper{
 		logger,
 		mailConf,
@@ -44,12 +44,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code, err := encodeToString(6)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
+	code := randString(12)
 	if err := s.cacheVerificationCode(code, reqBody.email); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
@@ -64,19 +59,15 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "Ok")
 }
 
-func encodeToString(max int) (string, error) {
-	b := make([]byte, max)
-	_, err := io.ReadAtLeast(rand.Reader, b, max)
-	if err != nil {
-		return "", err
-	}
-	for i := 0; i < len(b); i++ {
-		b[i] = table[int(b[i])%len(table)]
-	}
-	return string(b), nil
-}
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
+func randString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
 
 func (s SignUpper) cacheVerificationCode(code, email string) error {
 	return s.cache.Set(verificationCodeKeyPrefix+":"+email, code, "EX", 10*time.Minute)
