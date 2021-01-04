@@ -10,4 +10,5 @@ var (
 	ErrAccessTokenExpired  = errors.New("Access token expired")
 	ErrRefreshTokenInvalid = errors.New("Invalid refresh token")
 	ErrRefreshTokenExpired = errors.New("Refresh token expired")
+	ErrEmailInvalid        = errors.New("Invalid email")
 )

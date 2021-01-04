@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ossm-org/orchid/pkg/apis/auth"
+	"github.com/ossm-org/orchid/pkg/database"
 	"github.com/ossm-org/orchid/pkg/email"
 	"github.com/ossm-org/orchid/services/cache"
 	"go.uber.org/zap"
@@ -15,6 +16,7 @@ type Server struct {
 	ConfigOptions
 	logger *zap.SugaredLogger
 	cache  cache.Cache
+	db     database.Database
 }
 
 // ConfigOptions provides all config options frontend service needs.
@@ -25,11 +27,12 @@ type ConfigOptions struct {
 }
 
 // NewServer creates a new frontend.Server
-func NewServer(logger *zap.SugaredLogger, cache cache.Cache, config ConfigOptions) *Server {
+func NewServer(logger *zap.SugaredLogger, cache cache.Cache, db database.Database, config ConfigOptions) *Server {
 	return &Server{
 		config,
 		logger,
 		cache,
+		db,
 	}
 }
 
@@ -43,7 +46,7 @@ func (s *Server) Run() error {
 func (s *Server) createServeMux() http.Handler {
 	mux := mux.NewRouter()
 	mux.Handle("/signup", auth.NewSignUpper(s.logger, s.cache, s.Email)).Methods(http.MethodPost)
-	mux.Handle("/signin", auth.NewSignInner(s.logger, s.cache, s.AuthSecrets)).Methods(http.MethodPost)
+	mux.Handle("/signin", auth.NewSignInner(s.logger, s.cache, s.db, s.AuthSecrets)).Methods(http.MethodPost)
 	mux.Handle("/signout", auth.NewSignOuter(s.logger, s.cache)).Methods(http.MethodGet)
 	mux.Handle("/token/refresh", auth.NewRefresher(s.logger, s.cache, s.AuthSecrets)).Methods(http.MethodPost)
 	return mux

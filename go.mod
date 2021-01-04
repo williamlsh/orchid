@@ -6,6 +6,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gomodule/redigo/redis v0.0.0-20200429221454-e14091dffc1b
 	github.com/gorilla/mux v1.8.0
+	github.com/jackc/pgx/v4 v4.10.1
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/cobra v1.1.1
 	go.uber.org/zap v1.16.0
