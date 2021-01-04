@@ -42,9 +42,9 @@ func (s *Server) Run() error {
 // createServeMux registers all routers.
 func (s *Server) createServeMux() http.Handler {
 	mux := mux.NewRouter()
-	mux.Handle("/signup", auth.NewSignUpper(s.logger, s.cache, s.Email))
-	mux.Handle("/signin", auth.NewSignInner(s.logger, s.cache, s.AuthSecrets))
-	mux.Handle("/signout", auth.NewSignOuter(s.logger, s.cache))
-	mux.Handle("/token/refresh", auth.NewRefresher(s.logger, s.cache, s.AuthSecrets))
+	mux.Handle("/signup", auth.NewSignUpper(s.logger, s.cache, s.Email)).Methods(http.MethodPost)
+	mux.Handle("/signin", auth.NewSignInner(s.logger, s.cache, s.AuthSecrets)).Methods(http.MethodPost)
+	mux.Handle("/signout", auth.NewSignOuter(s.logger, s.cache)).Methods(http.MethodGet)
+	mux.Handle("/token/refresh", auth.NewRefresher(s.logger, s.cache, s.AuthSecrets)).Methods(http.MethodPost)
 	return mux
 }
