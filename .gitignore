@@ -3,3 +3,4 @@ db/migrations
 .env
 orchid
 log
+*test.sh
