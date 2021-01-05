@@ -28,6 +28,7 @@ func New(logger *zap.SugaredLogger, conf ConfigOptions, to, subject string) Mail
 
 // Send sends email.
 func (m Mail) Send(code string) error {
+	m.logger.Debugf("Send mail from %s, to %s", m.From, m.to)
 	msg := gomail.NewMessage()
 	msg.SetHeader("From", m.From)
 	msg.SetHeader("To", m.to)
@@ -35,6 +36,7 @@ func (m Mail) Send(code string) error {
 	msg.SetBody("text/html", "Please click http://localhost/m/callback?token="+code+"&operation=login&state=overseatu")
 
 	// TODO: Considering changing to mail daemon with only one mail connection for all sending emails.
+	m.logger.Debugf("Dial mail host: %s port: %d username: %s password: %s", m.Host, m.Port, m.Username, m.Passwd)
 	d := gomail.NewDialer(m.Host, m.Port, m.Username, m.Passwd)
 	return d.DialAndSend(msg)
 }
