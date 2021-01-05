@@ -38,7 +38,7 @@ services:
       - "--smtp-server-host"
       - "${SMTP_SERVER_HOST}"
       - "--smtp-server-port"
-      - "25"
+      - "${SMTP_SERVER_PORT:-25}"
       - "--auth-access-secret"
       - "${ACCESS_SECRET:-abc}"
       - "--auth-refresh-secret"
