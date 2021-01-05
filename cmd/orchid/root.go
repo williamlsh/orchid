@@ -7,16 +7,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	frontendHost string
-	frontendPort int
-)
-
 var rootCmd = &cobra.Command{
 	Use: "Orchid",
 }
 
-func execute() {
+func run() {
 	rootCmd.AddCommand(frontend.FrontendCmd)
 
 	if err := rootCmd.Execute(); err != nil {

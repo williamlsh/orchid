@@ -40,25 +40,25 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var reqBody struct {
-		email string
+		Email string
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
-	if !isEmailValid(reqBody.email) {
+	if !isEmailValid(reqBody.Email) {
 		http.Error(w, ErrEmailInvalid.Error(), http.StatusNotAcceptable)
 		return
 	}
 
 	code := randString(12)
-	if err := s.cacheVerificationCode(code, reqBody.email); err != nil {
+	if err := s.cacheVerificationCode(code, reqBody.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
-	mail := email.New(s.mailConf, reqBody.email, "Sign in to xxx")
+	mail := email.New(s.mailConf, reqBody.Email, "Sign in to xxx")
 	if err := mail.Send(code); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return

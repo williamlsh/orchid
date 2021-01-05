@@ -35,14 +35,14 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var reqBody struct {
-		email, code string
+		Email, Code string
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
-	code, err := s.fetchVerificationCodeFromCache(verificationCodeKeyPrefix + reqBody.email)
+	code, err := s.fetchVerificationCodeFromCache(verificationCodeKeyPrefix + reqBody.Email)
 	if err == redis.ErrNil {
 		if err := encodeCreds(w, "", "", "Verification code expired"); err != nil {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
@@ -53,14 +53,14 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	if reqBody.code != code {
+	if reqBody.Code != code {
 		if err := encodeCreds(w, "", "", "Incorrect verification code"); err != nil {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 			return
 		}
 	}
 
-	userid, err := s.createUserIfNotExist(r.Context(), reqBody.email)
+	userid, err := s.createUserIfNotExist(r.Context(), reqBody.Email)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
