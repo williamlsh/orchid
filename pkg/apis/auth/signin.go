@@ -59,6 +59,9 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if err = s.deleteVerificationCodeFromCache(verificationCodeKeyPrefix + reqBody.Email); err != nil {
+		s.logger.Warn("An error occurred when deleting cached verification code: %v", err)
+	}
 
 	userid, err := s.createUserIfNotExist(r.Context(), reqBody.Email)
 	if err != nil {
@@ -82,8 +85,13 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s SignInner) fetchVerificationCodeFromCache(email string) (string, error) {
-	return redis.String(s.cache.Get(email))
+func (s SignInner) fetchVerificationCodeFromCache(key string) (string, error) {
+	return redis.String(s.cache.Get(key))
+}
+
+func (s SignInner) deleteVerificationCodeFromCache(key string) error {
+	_, err := s.cache.Delete(key)
+	return err
 }
 
 func (s SignInner) createUserIfNotExist(ctx context.Context, email string) (uint64, error) {
