@@ -30,7 +30,7 @@ services:
       - "8080"
       - "--redis-addr"
       - "redis:6379"
-      - " --email-from"
+      - "--email-from"
       - "${EMAIL_FROM}"
       - "--email-passwd"
       - "${EMAIL_PASSWORD}"
