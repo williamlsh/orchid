@@ -15,8 +15,10 @@ import (
 )
 
 var (
-	frontendHost string
-	frontendPort int
+	logLevel       string
+	logDevelopment bool
+	frontendHost   string
+	frontendPort   int
 
 	pgUser    string
 	pgPass    string
@@ -45,7 +47,7 @@ var FrontendCmd = &cobra.Command{
 		frontendConfig.AuthSecrets = authSecrets
 		frontendConfig.Email = emailConfig
 
-		logger := logging.NewLogger("", false)
+		logger := logging.NewLogger(logLevel, logDevelopment)
 		cache := cache.New(logger, cacheConfig)
 		defer cache.Release()
 
@@ -80,4 +82,7 @@ func init() {
 	FrontendCmd.PersistentFlags().IntVar(&pgPort, "pg-port", 5432, "postgreSQL database port")
 	FrontendCmd.PersistentFlags().StringVar(&pgSslmode, "pg-sslmode", "disable", "postgreSQL database sslmode")
 	FrontendCmd.PersistentFlags().IntVar(&pgMaxConn, "pg-pool-max-conn", 10, "postgreSQL database pool max connections")
+
+	FrontendCmd.PersistentFlags().StringVar(&logLevel, "log-level", "error", "Log level")
+	FrontendCmd.PersistentFlags().BoolVar(&logDevelopment, "log-development", false, "Log development")
 }
