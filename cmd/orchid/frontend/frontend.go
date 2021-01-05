@@ -48,6 +48,8 @@ var FrontendCmd = &cobra.Command{
 		frontendConfig.Email = emailConfig
 
 		logger := logging.NewLogger(logLevel, logDevelopment)
+		defer logger.Sync()
+
 		cache := cache.New(logger, cacheConfig)
 		defer cache.Release()
 

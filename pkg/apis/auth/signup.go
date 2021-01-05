@@ -59,7 +59,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mail := email.New(s.mailConf, reqBody.Email, "Sign in to xxx")
+	mail := email.New(s.logger, s.mailConf, reqBody.Email, "Sign in to xxx")
 	if err := mail.Send(code); err != nil {
 		s.logger.Errorf("could not send code in email: %v", err)
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)

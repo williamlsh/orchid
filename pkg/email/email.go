@@ -1,6 +1,9 @@
 package email
 
-import "gopkg.in/gomail.v2"
+import (
+	"go.uber.org/zap"
+	"gopkg.in/gomail.v2"
+)
 
 // ConfigOptions includes all mail config options.
 type ConfigOptions struct {
@@ -12,14 +15,15 @@ type ConfigOptions struct {
 }
 
 type Mail struct {
+	logger *zap.SugaredLogger
 	ConfigOptions
 	to      string
 	subject string
 }
 
 // New returns a new mail.
-func New(conf ConfigOptions, to, subject string) Mail {
-	return Mail{conf, to, subject}
+func New(logger *zap.SugaredLogger, conf ConfigOptions, to, subject string) Mail {
+	return Mail{logger, conf, to, subject}
 }
 
 // Send sends email.
