@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    restart: on-failure
+
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: on-failure
+
+  orchid:
+    build: .
+    command:
+      - "frontend"
+      - "--log-level"
+      - "${LOG_LEVEL:-error}"
+      - "--log-development"
+      - "${LOG_DEVELOPMENT:-false}"
+      - "--frontend-service-host"
+      - "0.0.0.0"
+      - "--frontend-service-port"
+      - "8080"
+      - "--redis-addr"
+      - "redis:6379"
+      - " --email-from"
+      - "${EMAIL_FROM}"
+      - "--email-passwd"
+      - "${EMAIL_PASSWORD}"
+      - "--email-username"
+      - "${EMAIL_USERNAME}"
+      - "--smtp-server-host"
+      - "${SMTP_SERVER_HOST}"
+      - "--smtp-server-port"
+      - "25"
+      - "--auth-access-secret"
+      - "${ACCESS_SECRET:-abc}"
+      - "--auth-refresh-secret"
+      - "${REFRESH_SECRET:-xyz}"
+      - "--pg-dbname"
+      - "postgres"
+      - "--pg-host"
+      - "postgres"
+      - "--pg-passwd"
+      - "password"
+      - "--pg-pool-max-conn"
+      - "10"
+      - "--pg-port"
+      - "5432"
+      - "--pg-sslmode"
+      - "disable"
+      - "--pg-user"
+      - "postgres"
+    ports:
+      - "8080:8080"
+    container_name: orchid
+    restart: on-failure
+    depends_on:
+      - redis
+      - postgres
+
+volumes:
+  db-data:
