@@ -53,7 +53,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := randString(12)
-	if err := s.cacheVerificationCode(code, reqBody.Email); err != nil {
+	if err := s.cacheVerificationCode(code, reqBody.Email, 2*time.Hour); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
@@ -77,8 +77,8 @@ func randString(n int) string {
 	return string(b)
 }
 
-func (s SignUpper) cacheVerificationCode(code, email string) error {
-	return s.cache.Set(verificationCodeKeyPrefix+":"+email, code, "EX", 10*time.Minute)
+func (s SignUpper) cacheVerificationCode(code, email string, expire time.Duration) error {
+	return s.cache.Set(verificationCodeKeyPrefix+":"+email, code, "EX", expire)
 }
 
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
