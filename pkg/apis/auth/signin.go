@@ -35,7 +35,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var reqBody struct {
-		Email, Code string
+		Email, Username, Code string
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
@@ -63,7 +63,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.logger.Warn("An error occurred when deleting cached verification code: %v", err)
 	}
 
-	userid, err := s.createUserIfNotExist(r.Context(), reqBody.Email)
+	userid, err := s.createUserIfNotExist(r.Context(), reqBody.Email, reqBody.Username)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -94,7 +94,7 @@ func (s SignInner) deleteVerificationCodeFromCache(key string) error {
 	return err
 }
 
-func (s SignInner) createUserIfNotExist(ctx context.Context, email string) (uint64, error) {
+func (s SignInner) createUserIfNotExist(ctx context.Context, email, username string) (uint64, error) {
 	conn, err := s.db.Pool.Acquire(ctx)
 	if err != nil {
 		return 0, err
@@ -105,12 +105,12 @@ func (s SignInner) createUserIfNotExist(ctx context.Context, email string) (uint
 
 	sql := `
 	with a as (
-		select id, email
+		select id, email, username
 		from users
-		where email = $1
+		where email = $1 and username = $2
 	), b as (
-		insert into users (email)
-		select email
+		insert into users (email, username)
+		select $3, $4
 		where not exists (
 			select 1 from a
 		)
@@ -120,7 +120,7 @@ func (s SignInner) createUserIfNotExist(ctx context.Context, email string) (uint
 	union all
 	select id from b
 	`
-	if err := conn.QueryRow(ctx, sql, email, email).Scan(&id); err != nil {
+	if err := conn.QueryRow(ctx, sql, email, username, email, username).Scan(&id); err != nil {
 		return 0, err
 	}
 
