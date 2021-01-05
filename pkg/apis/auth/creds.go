@@ -72,10 +72,10 @@ func cacheCredential(userid uint64, creds *CredsPairInfo, cache cache.Cache) err
 	uid := strconv.Itoa(int(userid))
 	now := time.Now()
 
-	if err := cache.Set(creds.AccessUUID, uid, "EX", accessExpiredAt.Sub(now)); err != nil {
+	if err := cache.Set(creds.AccessUUID, uid, "EX", accessExpiredAt.Sub(now).Seconds()); err != nil {
 		return err
 	}
-	if err := cache.Set(creds.RefreshUUID, uid, "EX", refreshExpiredAt.Sub(now)); err != nil {
+	if err := cache.Set(creds.RefreshUUID, uid, "EX", refreshExpiredAt.Sub(now).Seconds()); err != nil {
 		return err
 	}
 
