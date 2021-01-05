@@ -1,5 +1,4 @@
 dist
-db/migrations
 .env
 orchid
 log
