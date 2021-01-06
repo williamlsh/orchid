@@ -1,5 +1,3 @@
-
-
 .PHONY: build
 build:
 	go build ./...
@@ -21,9 +19,14 @@ image:
 	docker build -t orchid .
 
 .PHONY: up
-up:
+up: down
+	docker-compose pull orchid
 	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose up --build -d
 
 .PHONY: down
 down:
-	docker-compose down -v --remove-orphans
+	docker-compose down --remove-orphans
+
+.PHONY: logs
+logs:
+	docker-compose logs -f orchid
