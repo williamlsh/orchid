@@ -10,30 +10,42 @@ import (
 
 // SignOuter implements a sign out handler.
 type SignOuter struct {
-	logger *zap.SugaredLogger
-	cache  cache.Cache
+	logger  *zap.SugaredLogger
+	cache   cache.Cache
+	secrets ConfigOptions
 }
 
 // NewSignOuter returns a new SignOuter.
-func NewSignOuter(logger *zap.SugaredLogger, cache cache.Cache) SignOuter {
+func NewSignOuter(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) SignOuter {
 	return SignOuter{
 		logger,
 		cache,
+		secrets,
 	}
 }
 
 func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	accessCreds, err := ExtractTokenMetaData(r)
+	accessCreds, err := s.extractTokenMetaData(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		s.logger.Errorf("could not extract token: %v", err)
+		http.Error(w, ErrAccessTokenInvalid.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	deleted, err := s.cache.Delete(accessCreds.UUID)
 	if err != nil || deleted == 0 {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		http.Error(w, ErrPreviouslySignnedOutUser.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	io.WriteString(w, "Successfully logged out")
+}
+
+func (s SignOuter) extractTokenMetaData(r *http.Request) (*IDSInfo, error) {
+	token, err := VerifyToken(r, s.secrets.AccessSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractTokenMetaData(token, kindAccessCreds)
 }

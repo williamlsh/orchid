@@ -42,12 +42,13 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code, err := s.fetchVerificationCodeFromCache(verificationCodeKeyPrefix + reqBody.Email)
+	code, err := s.fetchVerificationCodeFromCache(verificationCodeKeyPrefix + ":" + reqBody.Email)
 	if err == redis.ErrNil {
 		if err := encodeCreds(w, "", "", "Verification code expired"); err != nil {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 			return
 		}
+		return
 	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
@@ -58,8 +59,9 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 			return
 		}
+		return
 	}
-	if err = s.deleteVerificationCodeFromCache(verificationCodeKeyPrefix + reqBody.Email); err != nil {
+	if err = s.deleteVerificationCodeFromCache(verificationCodeKeyPrefix + ":" + reqBody.Email); err != nil {
 		s.logger.Warn("An error occurred when deleting cached verification code: %v", err)
 	}
 
@@ -68,14 +70,17 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	s.logger.Debugf("Created a new userid: %d\n", userid)
 
 	credentials, err := createCreds(userid, s.secrets)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
+	s.logger.Debugf("Credentials, access token: %s refresh token: %s access uuid: %s refresh uuid: %s access expired at: %d refresh expired at: %d\n", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
 
 	if err := cacheCredential(userid, credentials, s.cache); err != nil {
+		s.logger.Errorf("could not cache credentials: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

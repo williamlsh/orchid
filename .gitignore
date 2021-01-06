@@ -1,6 +1,6 @@
 dist
-db/migrations
 .env
 orchid
 log
 *test.sh
+db/redis

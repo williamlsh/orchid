@@ -53,13 +53,13 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := randString(12)
-	if err := s.cacheVerificationCode(code, reqBody.Email, 2*time.Hour.Seconds()); err != nil {
+	if err := s.cacheVerificationCode(code, reqBody.Email, int(2*time.Hour.Seconds())); err != nil {
 		s.logger.Errorf("could not cache verification code: %v", err)
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
-	mail := email.New(s.mailConf, reqBody.Email, "Sign in to xxx")
+	mail := email.New(s.logger, s.mailConf, reqBody.Email, "Sign in to xxx")
 	if err := mail.Send(code); err != nil {
 		s.logger.Errorf("could not send code in email: %v", err)
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
@@ -79,7 +79,7 @@ func randString(n int) string {
 	return string(b)
 }
 
-func (s SignUpper) cacheVerificationCode(code, email string, seconds float64) error {
+func (s SignUpper) cacheVerificationCode(code, email string, seconds int) error {
 	return s.cache.Set(verificationCodeKeyPrefix+":"+email, code, "EX", seconds)
 }
 
