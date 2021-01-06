@@ -4,6 +4,8 @@ import (
 	"flag"
 	"os"
 	"testing"
+
+	"go.uber.org/zap"
 )
 
 var conf ConfigOptions
@@ -19,7 +21,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestSend(t *testing.T) {
-	mail := New(conf, conf.From, "test")
+	sugar := zap.NewExample().Sugar()
+	defer sugar.Sync()
+
+	mail := New(sugar, conf, conf.From, "test")
 	if err := mail.Send("123"); err != nil {
 		t.Fatal(err)
 	}

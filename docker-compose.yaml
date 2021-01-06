@@ -4,6 +4,9 @@ services:
   redis:
     image: redis:6-alpine
     container_name: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - $PWD/db/redis:/data
     restart: on-failure
 
   postgres:
@@ -17,7 +20,7 @@ services:
     restart: on-failure
 
   orchid:
-    build: .
+    image: repo.treescale.com/overseastu/orchid:latest
     command:
       - "frontend"
       - "--log-level"
@@ -30,7 +33,7 @@ services:
       - "8080"
       - "--redis-addr"
       - "redis:6379"
-      - " --email-from"
+      - "--email-from"
       - "${EMAIL_FROM}"
       - "--email-passwd"
       - "${EMAIL_PASSWORD}"

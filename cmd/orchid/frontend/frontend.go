@@ -2,8 +2,10 @@ package frontend
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/ossm-org/orchid/pkg/apis/auth"
 	"github.com/ossm-org/orchid/pkg/database"
@@ -48,6 +50,8 @@ var FrontendCmd = &cobra.Command{
 		frontendConfig.Email = emailConfig
 
 		logger := logging.NewLogger(logLevel, logDevelopment)
+		defer logger.Sync()
+
 		cache := cache.New(logger, cacheConfig)
 		defer cache.Release()
 
@@ -85,4 +89,6 @@ func init() {
 
 	FrontendCmd.PersistentFlags().StringVar(&logLevel, "log-level", "error", "Log level")
 	FrontendCmd.PersistentFlags().BoolVar(&logDevelopment, "log-development", false, "Log development")
+
+	rand.Seed(int64(time.Now().Nanosecond()))
 }
