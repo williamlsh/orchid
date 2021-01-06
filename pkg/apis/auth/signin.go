@@ -77,7 +77,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
-	s.logger.Debugf("Credentials: %+v\n", *credentials)
+	s.logger.Debugf("Credentials, access token: %s refresh token: %s access uuid: %s refresh uuid: %s access expired at: %d refresh expired at: %d\n", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
 
 	if err := cacheCredential(userid, credentials, s.cache); err != nil {
 		s.logger.Errorf("could not cache credentials: %v", err)

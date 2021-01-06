@@ -141,15 +141,6 @@ func tokenValid(token *jwt.Token) bool {
 	return true
 }
 
-func ExtractTokenMetaData(r *http.Request) (*IDSInfo, error) {
-	token, err := VerifyToken(r, "")
-	if err != nil {
-		return nil, err
-	}
-
-	return extractTokenMetaData(token, kindAccessCreds)
-}
-
 type credsKind int
 
 const (
