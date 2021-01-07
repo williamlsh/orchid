@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/email"
-	"github.com/ossm-org/orchid/services/cache"
 	"go.uber.org/zap"
 )
 
@@ -53,7 +53,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := randString(12)
-	if err := s.cacheVerificationCode(code, reqBody.Email, int(2*time.Hour.Seconds())); err != nil {
+	if err := s.cacheVerificationCode(code, reqBody.Email, 2*time.Hour); err != nil {
 		s.logger.Errorf("could not cache verification code: %v", err)
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
@@ -79,8 +79,8 @@ func randString(n int) string {
 	return string(b)
 }
 
-func (s SignUpper) cacheVerificationCode(code, email string, seconds int) error {
-	return s.cache.Set(verificationCodeKeyPrefix+":"+email, code, "EX", seconds)
+func (s SignUpper) cacheVerificationCode(code, email string, expiration time.Duration) error {
+	return s.cache.Client.Set(verificationCodeKeyPrefix+":"+email, code, expiration).Err()
 }
 
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")

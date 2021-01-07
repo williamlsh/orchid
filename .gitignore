@@ -3,4 +3,5 @@ dist
 orchid
 log
 *test.sh
+.idea
 db/redis

@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/ossm-org/orchid/pkg/apis/auth"
+	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
 	"github.com/ossm-org/orchid/pkg/email"
 	"github.com/ossm-org/orchid/pkg/logging"
-	"github.com/ossm-org/orchid/services/cache"
 	"github.com/ossm-org/orchid/services/frontend"
 	"github.com/spf13/cobra"
 )
@@ -52,8 +52,8 @@ var FrontendCmd = &cobra.Command{
 		logger := logging.NewLogger(logLevel, logDevelopment)
 		defer logger.Sync()
 
-		cache := cache.New(logger, cacheConfig)
-		defer cache.Release()
+		cache := cache.New(logger, &cacheConfig)
+		defer cache.Client.Close()
 
 		db := database.New(logger, dsn)
 		defer db.Pool.Close()

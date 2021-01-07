@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ossm-org/orchid/services/cache"
+	"github.com/ossm-org/orchid/pkg/cache"
 	"go.uber.org/zap"
 )
 
@@ -62,7 +62,7 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete the previous Refresh Token
-	deleted, err := rf.cache.Delete(idsInfo.UUID)
+	deleted, err := rf.cache.Client.Del(idsInfo.UUID).Result()
 	if err != nil || deleted == 0 {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return

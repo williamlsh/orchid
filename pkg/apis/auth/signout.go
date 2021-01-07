@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ossm-org/orchid/services/cache"
+	"github.com/ossm-org/orchid/pkg/cache"
 	"go.uber.org/zap"
 )
 
@@ -32,7 +32,7 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deleted, err := s.cache.Delete(accessCreds.UUID)
+	deleted, err := s.cache.Client.Del(accessCreds.UUID).Result()
 	if err != nil || deleted == 0 {
 		http.Error(w, ErrPreviouslySignnedOutUser.Error(), http.StatusUnauthorized)
 		return
