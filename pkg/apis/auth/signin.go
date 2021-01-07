@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
-	"github.com/ossm-org/orchid/services/cache"
 	"go.uber.org/zap"
 )
 
@@ -91,11 +91,11 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s SignInner) fetchVerificationCodeFromCache(key string) (string, error) {
-	return redis.String(s.cache.Get(key))
+	return s.cache.CommonRedis.Get(key).Result()
 }
 
 func (s SignInner) deleteVerificationCodeFromCache(key string) error {
-	_, err := s.cache.Delete(key)
+	_, err := s.cache.CommonRedis.Del(key).Result()
 	return err
 }
 

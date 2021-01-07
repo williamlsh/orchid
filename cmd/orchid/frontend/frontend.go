@@ -11,7 +11,7 @@ import (
 	"github.com/ossm-org/orchid/pkg/database"
 	"github.com/ossm-org/orchid/pkg/email"
 	"github.com/ossm-org/orchid/pkg/logging"
-	"github.com/ossm-org/orchid/services/cache"
+	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/services/frontend"
 	"github.com/spf13/cobra"
 )
@@ -52,13 +52,12 @@ var FrontendCmd = &cobra.Command{
 		logger := logging.NewLogger(logLevel, logDevelopment)
 		defer logger.Sync()
 
-		cache := cache.New(logger, cacheConfig)
-		defer cache.Release()
+		cache := cache.Setup(logger, &cacheConfig)
 
 		db := database.New(logger, dsn)
 		defer db.Pool.Close()
 
-		server := frontend.NewServer(logger, cache, db, frontendConfig)
+		server := frontend.NewServer(logger, *cache, db, frontendConfig)
 		return server.Run()
 	},
 }

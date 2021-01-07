@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/email"
-	"github.com/ossm-org/orchid/services/cache"
 	"go.uber.org/zap"
 )
 
@@ -80,7 +80,7 @@ func randString(n int) string {
 }
 
 func (s SignUpper) cacheVerificationCode(code, email string, seconds int) error {
-	return s.cache.Set(verificationCodeKeyPrefix+":"+email, code, "EX", seconds)
+	return s.cache.CommonRedis.Set(verificationCodeKeyPrefix+":"+email, code, time.Duration(seconds)*time.Second).Err()
 }
 
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
