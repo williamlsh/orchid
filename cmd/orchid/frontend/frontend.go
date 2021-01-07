@@ -1,6 +1,7 @@
 package frontend
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"net"
@@ -57,6 +58,15 @@ var FrontendCmd = &cobra.Command{
 
 		db := database.New(logger, dsn)
 		defer db.Pool.Close()
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+		if err := db.Migrate(ctx); err != nil {
+			return err
+		}
+		if err := db.IsSchemaUpToDate(ctx); err != nil {
+			return err
+		}
 
 		server := frontend.NewServer(logger, cache, db, frontendConfig)
 		return server.Run()
