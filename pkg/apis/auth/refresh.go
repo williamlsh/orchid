@@ -62,7 +62,7 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete the previous Refresh Token
-	deleted, err := rf.cache.CommonRedis.Del(idsInfo.UUID).Result()
+	deleted, err := rf.cache.Client.Del(idsInfo.UUID).Result()
 	if err != nil || deleted == 0 {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return

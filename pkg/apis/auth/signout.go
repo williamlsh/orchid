@@ -32,7 +32,7 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deleted, err := s.cache.CommonRedis.Del(accessCreds.UUID).Result()
+	deleted, err := s.cache.Client.Del(accessCreds.UUID).Result()
 	if err != nil || deleted == 0 {
 		http.Error(w, ErrPreviouslySignnedOutUser.Error(), http.StatusUnauthorized)
 		return

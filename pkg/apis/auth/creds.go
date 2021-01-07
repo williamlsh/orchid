@@ -73,10 +73,10 @@ func cacheCredential(userid uint64, creds *CredsPairInfo, cache cache.Cache) err
 	uid := strconv.Itoa(int(userid))
 	now := time.Now()
 
-	if err := cache.CommonRedis.Set(creds.AccessUUID, uid, accessExpiredAt.Sub(now)).Err(); err != nil {
+	if err := cache.Client.Set(creds.AccessUUID, uid, accessExpiredAt.Sub(now)).Err(); err != nil {
 		return err
 	}
-	if err := cache.CommonRedis.Set(creds.RefreshUUID, uid, refreshExpiredAt.Sub(now)).Err(); err != nil {
+	if err := cache.Client.Set(creds.RefreshUUID, uid, refreshExpiredAt.Sub(now)).Err(); err != nil {
 		return err
 	}
 
@@ -94,8 +94,7 @@ func encodeCreds(w http.ResponseWriter, accessToken, refreshToken, msg string) e
 
 func FetchCredsFromCache(uuid string, cache cache.Cache) (uint64, error) {
 	// TODO: handle potential nil reply which expired.
-	//return redis.Uint64(cache.Get(uuid)) fixme !!
-	return 0, nil
+	return cache.Client.Get(uuid).Uint64()
 }
 
 func ExtractToken(r *http.Request) string {

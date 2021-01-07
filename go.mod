@@ -5,7 +5,6 @@ go 1.15
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
-	github.com/gomodule/redigo/redis v0.0.0-20200429221454-e14091dffc1b
 	github.com/gorilla/mux v1.8.0
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/onsi/ginkgo v1.14.2 // indirect

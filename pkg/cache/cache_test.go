@@ -1,8 +1,10 @@
 package cache
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 type TestCase struct {
@@ -14,12 +16,12 @@ func TestCache(t *testing.T) {
 		Addr:   "localhost:6379",
 		Passwd: "",
 	}
-	cache := Setup(nil, config)
+	cache := New(zap.NewExample().Sugar(), config)
 	testKey := "test:key"
 	testCase := &TestCase{
 		Exist: 0,
 	}
-	cache.CommonRedis.Del(testKey)
-	exist := cache.CommonRedis.Exists(testKey).Val()
+	cache.Client.Del(testKey)
+	exist := cache.Client.Exists(testKey).Val()
 	assert.Equal(t, exist, testCase.Exist)
 }

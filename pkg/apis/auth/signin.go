@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis"
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
 	"go.uber.org/zap"
@@ -43,7 +43,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code, err := s.fetchVerificationCodeFromCache(verificationCodeKeyPrefix + ":" + reqBody.Email)
-	if err == redis.ErrNil {
+	if err == redis.Nil {
 		if err := encodeCreds(w, "", "", "Verification code expired"); err != nil {
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 			return
@@ -91,11 +91,11 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s SignInner) fetchVerificationCodeFromCache(key string) (string, error) {
-	return s.cache.CommonRedis.Get(key).Result()
+	return s.cache.Client.Get(key).Result()
 }
 
 func (s SignInner) deleteVerificationCodeFromCache(key string) error {
-	_, err := s.cache.CommonRedis.Del(key).Result()
+	_, err := s.cache.Client.Del(key).Result()
 	return err
 }
 

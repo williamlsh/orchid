@@ -1,18 +1,22 @@
 package cache
 
 import (
-	"fmt"
+	"net"
+	"time"
+
 	"github.com/go-redis/redis"
 	"go.uber.org/zap"
-	"time"
 )
 
 const (
-	CommonDb = 0
+	commonDb    = 0
+	maxRetry    = 5
+	idleTimeOut = 5 * time.Minute
 )
 
+// Cache is a redis cache.
 type Cache struct {
-	CommonRedis *redis.Client
+	Client *redis.Client
 }
 
 // ConfigOptions includes redis config options.
@@ -21,18 +25,25 @@ type ConfigOptions struct {
 	Passwd string
 }
 
-func Setup(logger *zap.SugaredLogger, config *ConfigOptions) (cache *Cache) {
-	cache = &Cache{
-		CommonRedis: redis.NewClient(
-			&redis.Options{
-				Addr:        config.Addr,
-				Password:    config.Passwd,
-				DB:          CommonDb,
-				IdleTimeout: 3 * time.Second,
-			}),
+// New returns a new redis cache.
+func New(logger *zap.SugaredLogger, config *ConfigOptions) Cache {
+	opts := &redis.Options{
+		Dialer: func() (net.Conn, error) {
+			return net.Dial("tcp", config.Addr)
+		},
+		OnConnect: func(c *redis.Conn) error {
+			if _, err := c.Ping().Result(); err != nil {
+				return err
+			}
+			logger.Debugf("Successfully connected to Redis: %s\n", config.Addr)
+			return nil
+		},
+		DB:          commonDb,
+		MaxRetries:  maxRetry,
+		IdleTimeout: idleTimeOut,
 	}
-	if logger != nil {
-		logger.Debug(fmt.Sprintf("%s cache init success!", config.Addr))
+
+	return Cache{
+		Client: redis.NewClient(opts),
 	}
-	return
 }
