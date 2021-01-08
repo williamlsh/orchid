@@ -24,22 +24,22 @@ func init() {
 
 // EncodeID
 // id must be an integer less than math.MaxInt32 and greater than 0.
-func EncodeID(id int32) (midID int32, err error)  {
+func EncodeID(id uint64) (midID uint64, err error) {
 	if id < 0 || id > math.MaxInt32 {
-		err = errors.New("id is not valid")
+		err = errors.New("id is lagger than max int32")
 		return
 	}
-	midID = int32(op.Encode(uint64(id)))
+	midID = op.Encode(id)
 	return
 }
 
 // DecodeID is used to decode n back to the original
 // mixID must be an integer less than math.MaxInt32 and greater than 0.
-func DecodeID(mixID int32) (id int32, err error) {
+func DecodeID(mixID uint64) (id uint64, err error) {
 	if id < 0 || id > math.MaxInt32 {
-		err = errors.New("mixID is not valid")
+		err = errors.New("mixID is larger than max int32")
 		return
 	}
-	id = int32(op.Decode(uint64(mixID)))
+	id = op.Decode(mixID)
 	return
 }
