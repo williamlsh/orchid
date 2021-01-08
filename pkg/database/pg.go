@@ -10,13 +10,15 @@ import (
 
 // Database represents a new database.
 type Database struct {
-	Pool *pgxpool.Pool
+	Pool   *pgxpool.Pool
+	logger *zap.SugaredLogger
 }
 
 // New returns a new database.
 func New(logger *zap.SugaredLogger, dsn string) Database {
 	return Database{
-		Pool: newPool(logger, dsn),
+		Pool:   newPool(logger, dsn),
+		logger: logger,
 	}
 }
 
