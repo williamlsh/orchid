@@ -5,8 +5,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ossm-org/orchid/pkg/cache"
 	"go.uber.org/zap"
+
+	"github.com/ossm-org/orchid/pkg/cache"
 )
 
 // Refresher implements a token refresh handler.

@@ -10,9 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/email"
-	"go.uber.org/zap"
 )
 
 const verificationCodeKeyPrefix = "verification_code"

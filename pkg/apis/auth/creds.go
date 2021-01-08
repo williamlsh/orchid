@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/ossm-org/orchid/pkg/cache"
 	uuid "github.com/satori/go.uuid"
+
+	"github.com/ossm-org/orchid/pkg/cache"
 )
 
 // CredsPairInfo is an authenticated user credentials collection.

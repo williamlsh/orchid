@@ -4,8 +4,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/ossm-org/orchid/pkg/cache"
 	"go.uber.org/zap"
+
+	"github.com/ossm-org/orchid/pkg/cache"
 )
 
 // SignOuter implements a sign out handler.

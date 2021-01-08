@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
+
 	"github.com/ossm-org/orchid/pkg/apis/auth"
+	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
 	"github.com/ossm-org/orchid/pkg/email"
-	"github.com/ossm-org/orchid/pkg/cache"
-	"go.uber.org/zap"
 )
 
 // Server implements jaeger-demo-frontend service
