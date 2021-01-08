@@ -9,9 +9,11 @@ require (
 	github.com/jackc/pgx/v4 v4.10.1
 	github.com/onsi/ginkgo v1.14.2 // indirect
 	github.com/onsi/gomega v1.10.4 // indirect
+	github.com/pjebs/optimus-go v1.0.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.5.1
+	github.com/willf/bitset v1.1.11
 	go.uber.org/zap v1.16.0
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df

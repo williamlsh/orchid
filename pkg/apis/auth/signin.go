@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/go-redis/redis"
+	"go.uber.org/zap"
+
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
-	"go.uber.org/zap"
 )
 
 // SignInner implements a sign in handler.
