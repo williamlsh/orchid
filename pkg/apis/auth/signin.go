@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/go-redis/redis"
-	"go.uber.org/zap"
-
 	"github.com/ossm-org/orchid/pkg/cache"
+	"github.com/ossm-org/orchid/pkg/confuse"
 	"github.com/ossm-org/orchid/pkg/database"
+	"go.uber.org/zap"
 )
 
 // SignInner implements a sign in handler.
@@ -73,14 +73,21 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	s.logger.Debugf("Created a new userid: %d\n", userid)
 
-	credentials, err := createCreds(userid, s.secrets)
+	forgedUserID, err := confuse.EncodeID(userid)
+	if err != nil {
+		s.logger.Errorf("could not forge userid: %v", forgedUserID)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	credentials, err := createCreds(forgedUserID, s.secrets)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 	s.logger.Debugf("Credentials, access token: %s refresh token: %s access uuid: %s refresh uuid: %s access expired at: %d refresh expired at: %d\n", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
 
-	if err := cacheCredential(userid, credentials, s.cache); err != nil {
+	if err := cacheCredential(forgedUserID, credentials, s.cache); err != nil {
 		s.logger.Errorf("could not cache credentials: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

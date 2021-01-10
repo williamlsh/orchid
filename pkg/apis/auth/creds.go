@@ -13,6 +13,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/ossm-org/orchid/pkg/cache"
+	"github.com/ossm-org/orchid/pkg/confuse"
 )
 
 // CredsPairInfo is an authenticated user credentials collection.
@@ -170,9 +171,15 @@ func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDSInfo, err
 	if err != nil {
 		return nil, err
 	}
+
+	forgedUserID, err := confuse.EncodeID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("could not forge userid: %v", err)
+	}
+
 	return &IDSInfo{
 		UUID:   uuid,
-		UserID: userID,
+		UserID: forgedUserID,
 	}, nil
 }
 
