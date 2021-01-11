@@ -31,10 +31,6 @@ func NewSignInner(logger *zap.SugaredLogger, cache cache.Cache, db database.Data
 }
 
 func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
 	var reqBody struct {
 		Email, Username, Code string
 	}

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"io"
 	"math/rand"
 	"net"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/email"
+	"github.com/ossm-org/orchid/pkg/httpx"
 )
 
 const verificationCodeKeyPrefix = "verification_code"
@@ -35,39 +35,34 @@ func NewSignUpper(logger *zap.SugaredLogger, cache cache.Cache, mailConf email.C
 }
 
 func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-
 	var reqBody struct {
 		Email string
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		httpx.FinalizeResponse(w, httpx.ErrRequestDecodeJSON, nil)
 		return
 	}
 
 	if !isEmailValid(reqBody.Email) {
-		http.Error(w, ErrEmailInvalid.Error(), http.StatusNotAcceptable)
+		httpx.FinalizeResponse(w, httpx.ErrInvalidEmail, nil)
 		return
 	}
 
 	code := randString(12)
 	if err := s.cacheVerificationCode(code, reqBody.Email, 2*time.Hour); err != nil {
 		s.logger.Errorf("could not cache verification code: %v", err)
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
 		return
 	}
 
 	mail := email.New(s.logger, s.mailConf, reqBody.Email, "Sign in to xxx")
 	if err := mail.Send(code); err != nil {
 		s.logger.Errorf("could not send code in email: %v", err)
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
 		return
 	}
 
-	io.WriteString(w, "Ok")
+	httpx.FinalizeResponse(w, httpx.Success, nil)
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

@@ -45,10 +45,26 @@ func (s *Server) Run() error {
 
 // createServeMux registers all routers.
 func (s *Server) createServeMux() http.Handler {
-	mux := mux.NewRouter()
-	mux.Handle("/signup", auth.NewSignUpper(s.logger, s.cache, s.Email)).Methods(http.MethodPost)
-	mux.Handle("/signin", auth.NewSignInner(s.logger, s.cache, s.db, s.AuthSecrets)).Methods(http.MethodPost)
-	mux.Handle("/signout", auth.NewSignOuter(s.logger, s.cache, s.AuthSecrets)).Methods(http.MethodGet)
-	mux.Handle("/token/refresh", auth.NewRefresher(s.logger, s.cache, s.AuthSecrets)).Methods(http.MethodPost)
-	return mux
+	r := mux.NewRouter()
+	r.Use(s.Middleware)
+
+	sr := r.PathPrefix("/api").Subrouter()
+
+	// Routers of authentication.
+	auth.Auth(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, sr)
+
+	return r
+}
+
+// Middleware implements mux.Middleware. It's a general recovery middleware to catch all panics in every route.
+func (s *Server) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if r := recover(); r != nil {
+				s.logger.Error("Recovered in top route:", r)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }

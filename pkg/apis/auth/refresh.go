@@ -27,10 +27,6 @@ func NewRefresher(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOp
 }
 
 func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
 	var reqBody struct {
 		RefreshToken string `json:"refresh_token"`
 	}
