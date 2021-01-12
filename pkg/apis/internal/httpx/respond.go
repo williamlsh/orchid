@@ -9,7 +9,7 @@ import (
 type FinalResponse struct {
 	Code Code        `json:"code"`
 	Msg  string      `json:"message"`
-	Data interface{} `json:"data"`
+	Data interface{} `json:"data,omitempty"`
 }
 
 // FinalizeResponse finalizes a response in an handler. It should panic when any error occurs
