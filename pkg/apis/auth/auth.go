@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Auth groups all authentication routers.
-func Auth(
+// Group groups all authentication routers.
+func Group(
 	logger *zap.SugaredLogger,
 	cache cache.Cache,
 	db database.Database,

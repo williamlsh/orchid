@@ -1,10 +1,5 @@
 package httpx
 
-import (
-	"encoding/json"
-	"net/http"
-)
-
 // Code is an custom HTTP code.
 // It also implements error interface.
 type Code int
@@ -35,23 +30,4 @@ var Msgs = map[Code]string{
 	ErrInvalidEmail:      "Invalid email",
 
 	ErrInternalServer: "Internal server error",
-}
-
-// FinalResponse is a final uniform response to any request.
-type FinalResponse struct {
-	Code Code        `json:"code"`
-	Msg  string      `json:"message"`
-	Data interface{} `json:"data"`
-}
-
-// FinalizeResponse finalizes a response in an handler. It should panic when any error occurs
-// so that the top recovery middleware could cache it.
-func FinalizeResponse(w http.ResponseWriter, code Code, data interface{}) {
-	if err := json.NewEncoder(w).Encode(&FinalResponse{
-		Code: code,
-		Msg:  Msgs[code],
-		Data: data,
-	}); err != nil {
-		panic(err)
-	}
 }

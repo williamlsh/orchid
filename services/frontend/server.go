@@ -51,7 +51,7 @@ func (s *Server) createServeMux() http.Handler {
 	sr := r.PathPrefix("/api").Subrouter()
 
 	// Routers of authentication.
-	auth.Auth(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, sr)
+	auth.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, sr)
 
 	return r
 }

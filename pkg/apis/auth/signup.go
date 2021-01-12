@@ -11,9 +11,9 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/email"
-	"github.com/ossm-org/orchid/pkg/httpx"
 )
 
 const verificationCodeKeyPrefix = "verification_code"
