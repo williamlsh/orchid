@@ -15,6 +15,7 @@ type FinalResponse struct {
 // FinalizeResponse finalizes a response in an handler. It should panic when any error occurs
 // so that the top recovery middleware could cache it.
 func FinalizeResponse(w http.ResponseWriter, code Code, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(&FinalResponse{
 		Code: code,
 		Msg:  Msgs[code],
