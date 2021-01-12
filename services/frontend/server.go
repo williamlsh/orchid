@@ -28,7 +28,12 @@ type ConfigOptions struct {
 }
 
 // NewServer creates a new frontend.Server
-func NewServer(logger *zap.SugaredLogger, cache cache.Cache, db database.Database, config ConfigOptions) *Server {
+func NewServer(
+	logger *zap.SugaredLogger,
+	cache cache.Cache,
+	db database.Database,
+	config ConfigOptions,
+) *Server {
 	return &Server{
 		config,
 		logger,

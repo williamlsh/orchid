@@ -19,7 +19,7 @@ func Group(
 	secrets ConfigOptions,
 	r *mux.Router,
 ) {
-	r.Handle("/signup", NewSignUpper(logger, cache, email)).
+	r.Handle("/signup", NewSignUpper(logger, cache, db, email)).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 

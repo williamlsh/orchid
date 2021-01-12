@@ -16,6 +16,7 @@ const (
 
 	ErrRequestDecodeJSON
 	ErrInvalidEmail
+	ErrUserAlreadyExists
 
 	ErrInternalServer
 )
@@ -28,6 +29,7 @@ var Msgs = map[Code]string{
 
 	ErrRequestDecodeJSON: "Request JSON Decoding failed",
 	ErrInvalidEmail:      "Invalid email",
+	ErrUserAlreadyExists: "User already exists",
 
 	ErrInternalServer: "Internal server error",
 }
