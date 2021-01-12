@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/go-redis/redis"
+	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
 	"github.com/ossm-org/orchid/pkg/cache"
-	"github.com/ossm-org/orchid/pkg/confuse"
 	"github.com/ossm-org/orchid/pkg/database"
 	"go.uber.org/zap"
 )

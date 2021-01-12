@@ -12,8 +12,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	uuid "github.com/satori/go.uuid"
 
+	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
 	"github.com/ossm-org/orchid/pkg/cache"
-	"github.com/ossm-org/orchid/pkg/confuse"
 )
 
 // CredsPairInfo is an authenticated user credentials collection.
