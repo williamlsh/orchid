@@ -1,20 +1,29 @@
 package auth
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
 	"github.com/ossm-org/orchid/pkg/cache"
 )
+
+type credsKind int
+
+const (
+	kindAccessCreds credsKind = iota
+	kindRefreshCreds
+)
+
+// IDSInfo is either access info or refresh info.
+type IDSInfo struct {
+	UUID string
+	ID   uint64
+}
 
 // CredsPairInfo is an authenticated user credentials collection.
 type CredsPairInfo struct {
@@ -69,7 +78,7 @@ func createToken(claims jwt.MapClaims, secret string) (string, error) {
 	return accessToken.SignedString([]byte(secret))
 }
 
-func cacheCredential(userid uint64, creds *CredsPairInfo, cache cache.Cache) error {
+func cacheCredential(cache cache.Cache, userid uint64, creds *CredsPairInfo) error {
 	accessExpiredAt := time.Unix(creds.AccessExpireAt, 0)
 	refreshExpiredAt := time.Unix(creds.RefreshExpireAt, 0)
 	uid := strconv.Itoa(int(userid))
@@ -85,69 +94,12 @@ func cacheCredential(userid uint64, creds *CredsPairInfo, cache cache.Cache) err
 	return nil
 }
 
-func encodeCreds(w http.ResponseWriter, accessToken, refreshToken, msg string) error {
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]string{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-		"msg":           msg,
-	})
-}
-
-func FetchCredsFromCache(uuid string, cache cache.Cache) (uint64, error) {
-	// TODO: handle potential nil reply which expired.
-	return cache.Client.Get(uuid).Uint64()
-}
-
-func ExtractToken(r *http.Request) string {
-	bearToken := r.Header.Get("Authorization")
-	// Format: 'Authorization': 'Bearer <YOUR_TOKEN_HERE>'
-	strArr := strings.Split(bearToken, " ")
-	if len(strArr) == 2 {
-		return strings.TrimSpace(strArr[1])
-	}
-	return ""
-}
-
-func VerifyToken(r *http.Request, secret string) (*jwt.Token, error) {
-	signedTok := ExtractToken(r)
-	return verifyToken(signedTok, secret)
-}
-
-func verifyToken(signedTok, secret string) (*jwt.Token, error) {
-	return jwt.Parse(signedTok, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-		}
-		return []byte(secret), nil
-	})
-}
-
-func TokenValid(r *http.Request, secret string) error {
-	token, err := VerifyToken(r, secret)
-	if err != nil {
-		return err
-	}
-
-	if !tokenValid(token) {
-		return errors.New("Invalid token")
-	}
-	return nil
-}
-
 func tokenValid(token *jwt.Token) bool {
-	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
-		return false
+	if _, ok := token.Claims.(jwt.Claims); ok && token.Valid {
+		return true
 	}
-	return true
+	return false
 }
-
-type credsKind int
-
-const (
-	kindAccessCreds credsKind = iota
-	kindRefreshCreds
-)
 
 func extractTokenMetaData(token *jwt.Token, kind credsKind) (*IDSInfo, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
@@ -159,7 +111,7 @@ func extractTokenMetaData(token *jwt.Token, kind credsKind) (*IDSInfo, error) {
 			return readIDSInfoFromClaims(claims, "refresh_uuid")
 		}
 	}
-	return nil, ErrTokenExpired
+	return nil, errors.New("invalid token")
 }
 
 func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDSInfo, error) {
@@ -172,19 +124,42 @@ func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDSInfo, err
 		return nil, err
 	}
 
-	forgedUserID, err := confuse.EncodeID(userID)
-	if err != nil {
-		return nil, fmt.Errorf("could not forge userid: %v", err)
-	}
-
 	return &IDSInfo{
-		UUID:   uuid,
-		UserID: forgedUserID,
+		UUID: uuid,
+		ID:   userID,
 	}, nil
 }
 
-// IDSInfo is either access info or refresh info.
-type IDSInfo struct {
-	UUID   string
-	UserID uint64
+func extractTokenIDsMetaData(token *jwt.Token) (uuids []string, err error) {
+	for _, k := range []credsKind{kindAccessCreds, kindRefreshCreds} {
+		var idsInfo *IDSInfo
+		idsInfo, err = extractTokenMetaData(token, k)
+		if err != nil {
+			return
+		}
+		uuids = append(uuids, idsInfo.UUID)
+	}
+	return
+}
+
+func extractTokenIDsMetadada(token *jwt.Token) (userIDsInfo *IDSInfo, refreshIDsInfo *IDSInfo, err error) {
+	userIDsInfo, err = extractTokenMetaData(token, kindAccessCreds)
+	if err != nil {
+		return
+	}
+	refreshIDsInfo, err = extractTokenMetaData(token, kindRefreshCreds)
+	return
+}
+
+func deleteCredsFromCache(cache cache.Cache, uuids []string) error {
+	for _, id := range uuids {
+		deleted, err := cache.Client.Del(id).Result()
+		if err != nil {
+			return err
+		}
+		if deleted == 0 {
+			return errors.New("Credential already expired")
+		}
+	}
+	return nil
 }

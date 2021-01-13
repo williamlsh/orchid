@@ -15,8 +15,15 @@ const (
 	Failure
 
 	ErrRequestDecodeJSON
-	ErrInvalidEmail
-	ErrUserAlreadyExists
+
+	ErrAuthInvalidEmail
+	ErrAuthInvalidVerificationCode
+	ErrAuthVerificationCodeExpired
+	ErrAuthInvalidOperation
+	ErrAuthEmptyAlias
+	ErrUnauthorized
+	ErrAuthInvalidToken
+	ErrAuthAlreadyDeregistered
 
 	ErrInternalServer
 )
@@ -28,8 +35,15 @@ var Msgs = map[Code]string{
 	Failure: "Failure",
 
 	ErrRequestDecodeJSON: "Request JSON Decoding failed",
-	ErrInvalidEmail:      "Invalid email",
-	ErrUserAlreadyExists: "User already exists",
+
+	ErrAuthInvalidEmail:            "Invalid email",
+	ErrAuthInvalidVerificationCode: "Invalid verification code",
+	ErrAuthVerificationCodeExpired: "Verification code expired",
+	ErrAuthInvalidOperation:        "Invalid operation",
+	ErrAuthEmptyAlias:              "Empty user alias",
+	ErrUnauthorized:                "Unauthorized",
+	ErrAuthInvalidToken:            "Invalid token",
+	ErrAuthAlreadyDeregistered:     "Already deregistered",
 
 	ErrInternalServer: "Internal server error",
 }

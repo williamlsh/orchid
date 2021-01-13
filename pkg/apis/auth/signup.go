@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net"
@@ -13,15 +14,33 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/go-redis/redis"
 	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
 	"github.com/ossm-org/orchid/pkg/email"
 )
 
-const verificationCodeKeyPrefix = "verification_code"
+const (
+	// cacheVerificationCodeKeyPrefix is an auth cache key prefix to set verification code.
+	cacheVerificationCodeKeyPrefix = "auth:verification_code"
+
+	verificationCodeLength     = 12
+	verificationCodeExpiration = 2 * time.Hour
+
+	// letterBytes is used to generate random string.
+	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	operationRegister = "register"
+	operationLogIn    = "login"
+)
+
+var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 // SignUpper implements a sign up handler.
+// SignUpper authenticates users by email thus combines both register and login operations
+// and distinguishes these operatons from checking existing user or new user.
+// It sends an authentication email to user.
 type SignUpper struct {
 	logger   *zap.SugaredLogger
 	mailConf email.ConfigOptions
@@ -54,15 +73,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !isEmailValid(reqBody.Email) {
-		httpx.FinalizeResponse(w, httpx.ErrInvalidEmail, nil)
-		return
-	}
-
-	code := randString(12)
-	if err := s.cacheVerificationCode(code, reqBody.Email, 2*time.Hour); err != nil {
-		s.logger.Errorf("could not cache verification code: %v", err)
-
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrAuthInvalidEmail, nil)
 		return
 	}
 
@@ -70,6 +81,26 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Errorf("could not check new user in database: %v", err)
 
+		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		return
+	}
+
+	// Evict old code before cache new if any.
+	if err := s.evictUserVerificationCode(reqBody.Email); err != nil && !errors.Is(err, redis.Nil) {
+		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		return
+	}
+
+	code := randString(verificationCodeLength)
+	if err := s.cacheUserEmail(isNewUser, code, reqBody.Email, verificationCodeExpiration); err != nil {
+		s.logger.Errorf("could not cache verification code: %v", err)
+
+		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		return
+	}
+
+	// Mark operation after caching new code.
+	if err := s.markUserOperation(reqBody.Email, code, verificationCodeExpiration); err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
 		return
 	}
@@ -87,7 +118,69 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	httpx.FinalizeResponse(w, httpx.Success, nil)
 }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+// cacheUserEmail caches user auth operation info with expiration value of verificationCodeExpiration.
+// One user with unique email only has one cache info in redis.
+// The SignInner handler will use cache info to authenticate user.
+func (s SignUpper) cacheUserEmail(isNewUser bool, code, email string, expiration time.Duration) error {
+	// Embed code in cache key, then in /signin, we can construct this key from user submit code again.
+	// Use email as value, then in /signin we can handle user with this email.
+	key := cacheVerificationCodeKeyPrefix + ":" + code
+	// Prefix operation to value.
+	var val string
+
+	if isNewUser {
+		val = operationRegister + ":" + email
+	} else {
+		val = operationLogIn + ":" + email
+	}
+	return s.cache.Client.Set(key, val, expiration).Err()
+}
+
+// markUserOperation is an helper for cacheUserEmail.
+// This helper marks user auth operation email with expiration value of verificationCodeExpiration.
+// When user frequently request SignUpper handler to receive emails, we always mark the latest operation,
+// delete the old cache, making only the latest operation is valid. This reduces SignInner handler complexity.
+// When SignInner handler receives code from request, it handles only the latest verification code.
+func (s SignUpper) markUserOperation(email, code string, expiration time.Duration) error {
+	key := cacheVerificationCodeKeyPrefix + ":" + email
+	return s.cache.Client.Set(key, code, expiration).Err()
+}
+
+// evictUserVerificationCode is a helper for cacheUserEmail.
+// It's called before cacheUserEmail.
+func (s SignUpper) evictUserVerificationCode(email string) error {
+	// First, get code from email.
+	key1 := cacheVerificationCodeKeyPrefix + ":" + email
+	code, err := s.cache.Client.Get(key1).Result()
+	if err != nil {
+		// May return redis.Nil error, caller should check and skip this error.
+		return err
+	}
+
+	// Second, delete code from code key.
+	key2 := cacheVerificationCodeKeyPrefix + ":" + code
+	return s.cache.Client.Del(key2).Err()
+}
+
+// isNewUser checks whether a signing up user is a new user by search its email in database.
+func (s SignUpper) isNewUser(ctx context.Context, email string) (bool, error) {
+	conn, err := s.db.Pool.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer conn.Release()
+
+	var exists bool
+
+	// An existing user has a email and doesn't deregister.
+	sql := `select exists(select 1 from users where email = $1 and deregistered = $2)`
+	if err := conn.QueryRow(ctx, sql, email, false).Scan(&exists); err != nil {
+		return false, err
+	}
+
+	// An existing user is not a new user!
+	return !exists, nil
+}
 
 // randString returns a n length random string.
 func randString(n int) string {
@@ -97,12 +190,6 @@ func randString(n int) string {
 	}
 	return string(b)
 }
-
-func (s SignUpper) cacheVerificationCode(code, email string, expiration time.Duration) error {
-	return s.cache.Client.Set(verificationCodeKeyPrefix+":"+email, code, expiration).Err()
-}
-
-var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 // isEmailValid checks if the email provided passes the required structure
 // and length test. It also checks the domain has a valid MX record.
@@ -121,34 +208,15 @@ func isEmailValid(e string) bool {
 	return true
 }
 
-// isNewUser checks whether a signing up user is a new user by search its email in database.
-func (s SignUpper) isNewUser(ctx context.Context, email string) (bool, error) {
-	conn, err := s.db.Pool.Acquire(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer conn.Release()
-
-	var exists bool
-
-	sql := `select exists(select 1 from users where email = $1)`
-	if err := conn.QueryRow(ctx, sql, email).Scan(&exists); err != nil {
-		return false, err
-	}
-
-	return exists, nil
-}
-
 func composeEmail(isNewUser bool, code string) (subject string, content string) {
 	// TODO: Use a html template here.
 	tpl := "https://overseastu.com/m/callback?token=%s&operation=%s&state=overseastu"
-	switch isNewUser {
-	case false:
-		subject = "Sign in to Overseastu"
-		content = fmt.Sprintf(tpl, code, "login")
-	case true:
+	if isNewUser {
 		subject = "Finish creating your account on Overseastu"
 		content = fmt.Sprintf(tpl, code, "register")
+	} else {
+		subject = "Sign in to Overseastu"
+		content = fmt.Sprintf(tpl, code, "login")
 	}
 	return
 }

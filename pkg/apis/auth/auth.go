@@ -33,4 +33,7 @@ func Group(
 	r.Handle("/token/refresh", NewRefresher(logger, cache, secrets)).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
+
+	r.Handle("/deregister", NewDeregistor(logger, cache, db, secrets)).
+		Methods(http.MethodGet)
 }

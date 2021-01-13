@@ -21,4 +21,13 @@ var migrations = []func(ctx context.Context, tx pgx.Tx) error{
 		_, err = tx.Exec(ctx, sql)
 		return err
 	},
+	func(ctx context.Context, tx pgx.Tx) (err error) {
+		sql := `
+			ALTER TABLE users
+			ADD COLUMN alias VARCHAR (50),
+			ADD COLUMN deregistered boolean DEFAULT false;
+		`
+		_, err = tx.Exec(ctx, sql)
+		return err
+	},
 }

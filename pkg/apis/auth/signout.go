@@ -1,11 +1,13 @@
 package auth
 
 import (
-	"io"
 	"net/http"
 
 	"go.uber.org/zap"
 
+	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/request"
+	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
 )
 
@@ -26,27 +28,43 @@ func NewSignOuter(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOp
 }
 
 func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	accessCreds, err := s.extractTokenMetaData(r)
+	token, err := s.parseTokenFromRequest(r)
 	if err != nil {
-		s.logger.Errorf("could not extract token: %v", err)
-		http.Error(w, ErrAccessTokenInvalid.Error(), http.StatusUnauthorized)
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
+		return
+	}
+	// Is token valid?
+	if !tokenValid(token) {
+		httpx.FinalizeResponse(w, httpx.ErrAuthInvalidToken, nil)
 		return
 	}
 
-	deleted, err := s.cache.Client.Del(accessCreds.UUID).Result()
-	if err != nil || deleted == 0 {
-		http.Error(w, ErrPreviouslySignnedOutUser.Error(), http.StatusUnauthorized)
+	uuids, err := extractTokenIDsMetaData(token)
+	if err != nil {
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
 
-	io.WriteString(w, "Successfully logged out")
+	if err := deleteCredsFromCache(s.cache, uuids); err != nil {
+		s.logger.Errorf("could not delete creds form cache: %v", err)
+
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
+		return
+	}
+
+	httpx.FinalizeResponse(w, httpx.Success, nil)
 }
 
-func (s SignOuter) extractTokenMetaData(r *http.Request) (*IDSInfo, error) {
-	token, err := VerifyToken(r, s.secrets.AccessSecret)
-	if err != nil {
-		return nil, err
-	}
-
-	return extractTokenMetaData(token, kindAccessCreds)
+func (s SignOuter) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
+	return request.ParseFromRequest(
+		r,
+		request.AuthorizationHeaderExtractor,
+		func(t *jwt.Token) (interface{}, error) {
+			return s.secrets.AccessSecret, nil
+		},
+		request.WithClaims(jwt.MapClaims{}),
+		request.WithParser(&jwt.Parser{
+			ValidMethods: []string{jwt.SigningMethodHS256.Alg()},
+		}),
+	)
 }
