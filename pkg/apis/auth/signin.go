@@ -193,8 +193,13 @@ func (s SignInner) createUser(ctx context.Context, email, username, alias string
 
 	var id uint64
 
+	// If a deregistered user register again, just upsert user.
 	sql := `
-		insert into users(email, username, alias)
+		INSERT INTO users (email, username, alias)
+		VALUES($1, $2, $3)
+		ON CONFLICT (email)
+		DO
+			UPDATE SET email = $1, username = $2, alias = $3, deregistered = false;
 	`
 	if err := conn.QueryRow(ctx, sql, email, alias, email, alias).Scan(&id); err != nil {
 		return 0, err
