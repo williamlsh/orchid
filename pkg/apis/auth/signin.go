@@ -71,6 +71,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
+	s.logger.Debug("Fetched cached verification code: ", val)
 
 	// Delete caced verification code immediately once user requested,
 	// so that a callack url in authentication email can be used only once.
@@ -85,7 +86,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The cached verification code was fetched, then check user's operation.
 	operation, email := splitOpAndEmail(val)
 	if reqBody.Operation != operation {
-		s.logger.Debugf("Operation in request is different from that associated with cached verification code, cached: %s, user: %s", reqBody.Operation, operation)
+		s.logger.Debugf("Operation in request is different from that associated with cached verification code, cached: %s, user: %s", operation, reqBody.Operation)
 
 		httpx.FinalizeResponse(w, httpx.ErrAuthInvalidOperation, nil)
 		return
@@ -100,7 +101,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 			return
 		}
-		s.logger.Debugf("Got userid: %d\n", userid)
+		s.logger.Debugf("Got userid: %d", userid)
 	} else if operation == operationRegister {
 		// Handle empty user alias.
 		if reqBody.Alias == "" {
@@ -121,7 +122,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 			return
 		}
-		s.logger.Debugf("Created a new userid: %d\n", userid)
+		s.logger.Debugf("Created a new userid: %d", userid)
 	}
 
 	// Forge real userid from frontend.
@@ -138,7 +139,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
-	s.logger.Debugf("Credentials, access token: %s refresh token: %s access uuid: %s refresh uuid: %s access expired at: %d refresh expired at: %d\n", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
+	s.logger.Debugf("Credentials, access token: %s refresh token: %s access uuid: %s refresh uuid: %s access expired at: %d refresh expired at: %d", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
 
 	if err := cacheCredential(r.Context(), s.cache, forgedUserID, credentials); err != nil {
 		s.logger.Errorf("could not cache credentials: %v", err)

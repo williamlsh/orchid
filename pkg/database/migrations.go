@@ -75,6 +75,7 @@ func (db Database) IsSchemaUpToDate(ctx context.Context) error {
 	if currentVersion < schemaVersion {
 		return fmt.Errorf(`the database schema is not up to date: current=v%d expected=v%d`, currentVersion, schemaVersion)
 	}
+	db.logger.Debug("Database schema is up to date")
 	return nil
 }
 

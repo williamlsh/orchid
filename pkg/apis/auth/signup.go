@@ -99,6 +99,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
+	s.logger.Debugf("Send email with isNewUser=%t token=%s", isNewUser, code)
 
 	// Mark operation after caching new code.
 	if err := s.markUserOperation(r.Context(), reqBody.Email, code, verificationCodeExpiration); err != nil {
@@ -140,6 +141,8 @@ func (s SignUpper) cacheUserEmail(ctx context.Context, isNewUser bool, code, ema
 	} else {
 		val = operationLogIn + ":" + email
 	}
+	s.logger.Debugf("Cache user code with email, key=%s val=%s", key, val)
+
 	return s.cache.Client.Set(ctx, key, val, expiration).Err()
 }
 
@@ -150,6 +153,8 @@ func (s SignUpper) cacheUserEmail(ctx context.Context, isNewUser bool, code, ema
 // When SignInner handler receives code from request, it handles only the latest verification code.
 func (s SignUpper) markUserOperation(ctx context.Context, email, code string, expiration time.Duration) error {
 	key := cacheVerificationCodeKeyPrefix + ":" + email
+	s.logger.Debugf("Mark user operation in cache: key=%s val=%s", key, code)
+
 	return s.cache.Client.Set(ctx, key, code, expiration).Err()
 }
 
@@ -166,6 +171,7 @@ func (s SignUpper) evictUserVerificationCode(ctx context.Context, email string) 
 
 	// Second, delete code from code key.
 	key2 := cacheVerificationCodeKeyPrefix + ":" + code
+	s.logger.Debugf("Evict cache verification code, key=%s", key2)
 	return s.cache.Client.Del(ctx, key2).Err()
 }
 

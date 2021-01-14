@@ -34,7 +34,7 @@ func New(logger *zap.SugaredLogger, config *ConfigOptions) Cache {
 			if _, err := cn.Ping(ctx).Result(); err != nil {
 				return err
 			}
-			logger.Debugf("Successfully connected to Redis: %s\n", config.Addr)
+			logger.Debugf("Successfully connected to Redis: %s", config.Addr)
 			return nil
 		},
 		DB:          commonDb,
