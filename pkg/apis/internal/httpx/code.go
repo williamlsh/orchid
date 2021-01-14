@@ -25,7 +25,7 @@ const (
 	ErrAuthInvalidToken
 	ErrAuthAlreadyDeregistered
 
-	ErrInternalServer
+	ErrServiceUnavailable
 )
 
 // Msgs is an HTTP error code to flag map.
@@ -45,5 +45,5 @@ var Msgs = map[Code]string{
 	ErrAuthInvalidToken:            "Invalid token",
 	ErrAuthAlreadyDeregistered:     "Already deregistered",
 
-	ErrInternalServer: "Internal server error",
+	ErrServiceUnavailable: " Service unavailable",
 }

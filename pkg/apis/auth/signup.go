@@ -82,13 +82,13 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Errorf("could not check new user in database: %v", err)
 
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
 	// Evict old code before cache new if any.
 	if err := s.evictUserVerificationCode(r.Context(), reqBody.Email); err != nil && !errors.Is(err, redis.Nil) {
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
@@ -96,13 +96,13 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := s.cacheUserEmail(r.Context(), isNewUser, code, reqBody.Email, verificationCodeExpiration); err != nil {
 		s.logger.Errorf("could not cache verification code: %v", err)
 
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
 	// Mark operation after caching new code.
 	if err := s.markUserOperation(r.Context(), reqBody.Email, code, verificationCodeExpiration); err != nil {
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
@@ -110,7 +110,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Errorf("could not compose email: %v", err)
 
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
@@ -118,7 +118,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := mail.Send(content); err != nil {
 		s.logger.Errorf("could not send code in email: %v", err)
 
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 

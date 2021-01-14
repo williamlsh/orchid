@@ -60,7 +60,7 @@ func (d Deregistor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	realUserUD, err := confuse.DecodeID(userIDsInfo.ID)
 	if err != nil {
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 

@@ -68,7 +68,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Errorf("could not fetch email from cache: %v", err)
 
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err = s.deleteUserEmailFromCache(r.Context(), key); err != nil {
 		s.logger.Errorf("An error occurred when deleting cached verification code: %v", err)
 
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
@@ -97,7 +97,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			s.logger.Errorf("could not get userid by email: %v", err)
 
-			httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+			httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 			return
 		}
 		s.logger.Debugf("Got userid: %d\n", userid)
@@ -112,13 +112,13 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			s.logger.Errorf("could not generate new username: %v", err)
 
-			httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+			httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 			return
 		}
 
 		userid, err = s.createUser(r.Context(), email, username, reqBody.Alias)
 		if err != nil {
-			httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+			httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 			return
 		}
 		s.logger.Debugf("Created a new userid: %d\n", userid)
@@ -129,13 +129,13 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Errorf("could not forge userid: %v", forgedUserID)
 
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
 	credentials, err := createCreds(forgedUserID, s.secrets)
 	if err != nil {
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 	s.logger.Debugf("Credentials, access token: %s refresh token: %s access uuid: %s refresh uuid: %s access expired at: %d refresh expired at: %d\n", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
@@ -143,7 +143,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := cacheCredential(r.Context(), s.cache, forgedUserID, credentials); err != nil {
 		s.logger.Errorf("could not cache credentials: %v", err)
 
-		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
