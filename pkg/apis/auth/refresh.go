@@ -59,12 +59,12 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create new pairs of refresh and access tokens.
 	credentials, err := createCreds(userIDsInfo.ID, rf.secrets)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
 	// Save the tokens metadata to redis.
 	if err := cacheCredential(rf.cache, userIDsInfo.ID, credentials); err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
 
