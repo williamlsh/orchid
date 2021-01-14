@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"math/rand"
 	"net"
 	"net/http"
@@ -105,7 +106,13 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	subject, content := composeEmail(isNewUser, code)
+	subject, content, err := composeEmail(isNewUser, code)
+	if err != nil {
+		s.logger.Errorf("could not compose email: %v", err)
+
+		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
+		return
+	}
 
 	mail := email.New(s.logger, s.mailConf, reqBody.Email, subject)
 	if err := mail.Send(content); err != nil {
@@ -208,15 +215,20 @@ func isEmailValid(e string) bool {
 	return true
 }
 
-func composeEmail(isNewUser bool, code string) (subject string, content string) {
-	// TODO: Use a html template here.
-	tpl := "https://overseastu.com/m/callback?token=%s&operation=%s&state=overseastu"
+func composeEmail(isNewUser bool, code string) (subject string, content string, err error) {
+	url := "https://overseastu.com/m/callback?token=%s&operation=%s&state=overseastu"
 	if isNewUser {
 		subject = "Finish creating your account on Overseastu"
-		content = fmt.Sprintf(tpl, code, "register")
+		regURL := fmt.Sprintf(url, code, "register")
+		content, err = renderEmail(registerTpl, data{
+			URL: template.URL(regURL),
+		})
 	} else {
 		subject = "Sign in to Overseastu"
-		content = fmt.Sprintf(tpl, code, "login")
+		logURL := fmt.Sprintf(url, code, "login")
+		content, err = renderEmail(loginTpl, data{
+			URL: template.URL(logURL),
+		})
 	}
 	return
 }
