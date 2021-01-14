@@ -1,10 +1,10 @@
 package cache
 
 import (
-	"net"
+	"context"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 )
 
@@ -28,11 +28,10 @@ type ConfigOptions struct {
 // New returns a new redis cache.
 func New(logger *zap.SugaredLogger, config *ConfigOptions) Cache {
 	opts := &redis.Options{
-		Dialer: func() (net.Conn, error) {
-			return net.Dial("tcp", config.Addr)
-		},
-		OnConnect: func(c *redis.Conn) error {
-			if _, err := c.Ping().Result(); err != nil {
+		Addr:     config.Addr,
+		Password: config.Passwd,
+		OnConnect: func(ctx context.Context, cn *redis.Conn) error {
+			if _, err := cn.Ping(ctx).Result(); err != nil {
 				return err
 			}
 			logger.Debugf("Successfully connected to Redis: %s\n", config.Addr)

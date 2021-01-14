@@ -15,7 +15,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
@@ -87,13 +87,13 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Evict old code before cache new if any.
-	if err := s.evictUserVerificationCode(reqBody.Email); err != nil && !errors.Is(err, redis.Nil) {
+	if err := s.evictUserVerificationCode(r.Context(), reqBody.Email); err != nil && !errors.Is(err, redis.Nil) {
 		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
 		return
 	}
 
 	code := randString(verificationCodeLength)
-	if err := s.cacheUserEmail(isNewUser, code, reqBody.Email, verificationCodeExpiration); err != nil {
+	if err := s.cacheUserEmail(r.Context(), isNewUser, code, reqBody.Email, verificationCodeExpiration); err != nil {
 		s.logger.Errorf("could not cache verification code: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
@@ -101,7 +101,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Mark operation after caching new code.
-	if err := s.markUserOperation(reqBody.Email, code, verificationCodeExpiration); err != nil {
+	if err := s.markUserOperation(r.Context(), reqBody.Email, code, verificationCodeExpiration); err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
 		return
 	}
@@ -128,7 +128,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // cacheUserEmail caches user auth operation info with expiration value of verificationCodeExpiration.
 // One user with unique email only has one cache info in redis.
 // The SignInner handler will use cache info to authenticate user.
-func (s SignUpper) cacheUserEmail(isNewUser bool, code, email string, expiration time.Duration) error {
+func (s SignUpper) cacheUserEmail(ctx context.Context, isNewUser bool, code, email string, expiration time.Duration) error {
 	// Embed code in cache key, then in /signin, we can construct this key from user submit code again.
 	// Use email as value, then in /signin we can handle user with this email.
 	key := cacheVerificationCodeKeyPrefix + ":" + code
@@ -140,7 +140,7 @@ func (s SignUpper) cacheUserEmail(isNewUser bool, code, email string, expiration
 	} else {
 		val = operationLogIn + ":" + email
 	}
-	return s.cache.Client.Set(key, val, expiration).Err()
+	return s.cache.Client.Set(ctx, key, val, expiration).Err()
 }
 
 // markUserOperation is an helper for cacheUserEmail.
@@ -148,17 +148,17 @@ func (s SignUpper) cacheUserEmail(isNewUser bool, code, email string, expiration
 // When user frequently request SignUpper handler to receive emails, we always mark the latest operation,
 // delete the old cache, making only the latest operation is valid. This reduces SignInner handler complexity.
 // When SignInner handler receives code from request, it handles only the latest verification code.
-func (s SignUpper) markUserOperation(email, code string, expiration time.Duration) error {
+func (s SignUpper) markUserOperation(ctx context.Context, email, code string, expiration time.Duration) error {
 	key := cacheVerificationCodeKeyPrefix + ":" + email
-	return s.cache.Client.Set(key, code, expiration).Err()
+	return s.cache.Client.Set(ctx, key, code, expiration).Err()
 }
 
 // evictUserVerificationCode is a helper for cacheUserEmail.
 // It's called before cacheUserEmail.
-func (s SignUpper) evictUserVerificationCode(email string) error {
+func (s SignUpper) evictUserVerificationCode(ctx context.Context, email string) error {
 	// First, get code from email.
 	key1 := cacheVerificationCodeKeyPrefix + ":" + email
-	code, err := s.cache.Client.Get(key1).Result()
+	code, err := s.cache.Client.Get(ctx, key1).Result()
 	if err != nil {
 		// May return redis.Nil error, caller should check and skip this error.
 		return err
@@ -166,7 +166,7 @@ func (s SignUpper) evictUserVerificationCode(email string) error {
 
 	// Second, delete code from code key.
 	key2 := cacheVerificationCodeKeyPrefix + ":" + code
-	return s.cache.Client.Del(key2).Err()
+	return s.cache.Client.Del(ctx, key2).Err()
 }
 
 // isNewUser checks whether a signing up user is a new user by search its email in database.

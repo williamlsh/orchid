@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -78,16 +79,16 @@ func createToken(claims jwt.MapClaims, secret string) (string, error) {
 	return accessToken.SignedString([]byte(secret))
 }
 
-func cacheCredential(cache cache.Cache, userid uint64, creds *CredsPairInfo) error {
+func cacheCredential(ctx context.Context, cache cache.Cache, userid uint64, creds *CredsPairInfo) error {
 	accessExpiredAt := time.Unix(creds.AccessExpireAt, 0)
 	refreshExpiredAt := time.Unix(creds.RefreshExpireAt, 0)
 	uid := strconv.Itoa(int(userid))
 	now := time.Now()
 
-	if err := cache.Client.Set(creds.AccessUUID, uid, accessExpiredAt.Sub(now)).Err(); err != nil {
+	if err := cache.Client.Set(ctx, creds.AccessUUID, uid, accessExpiredAt.Sub(now)).Err(); err != nil {
 		return err
 	}
-	if err := cache.Client.Set(creds.RefreshUUID, uid, refreshExpiredAt.Sub(now)).Err(); err != nil {
+	if err := cache.Client.Set(ctx, creds.RefreshUUID, uid, refreshExpiredAt.Sub(now)).Err(); err != nil {
 		return err
 	}
 
@@ -151,9 +152,9 @@ func extractTokenIDsMetadada(token *jwt.Token) (userIDs *IDs, refreshIDs *IDs, e
 	return
 }
 
-func deleteCredsFromCache(cache cache.Cache, uuids []string) error {
+func deleteCredsFromCache(ctx context.Context, cache cache.Cache, uuids []string) error {
 	for _, id := range uuids {
-		deleted, err := cache.Client.Del(id).Result()
+		deleted, err := cache.Client.Del(ctx, id).Result()
 		if err != nil {
 			return err
 		}

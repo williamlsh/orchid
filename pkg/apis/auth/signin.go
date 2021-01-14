@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
 	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
@@ -59,7 +59,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// We compare reqBody.Code with cached verification code from redis to check validity and to determine operation type.
 	// If reqBody.Code doesn't exist in database, just return soon.
 	key := cacheVerificationCodeKeyPrefix + ":" + reqBody.Code
-	val, err := s.fetchUserEmailFromCache(key)
+	val, err := s.fetchUserEmailFromCache(r.Context(), key)
 	if errors.Is(err, redis.Nil) {
 		// If key doesn't exist, verification code must be expired.
 		httpx.FinalizeResponse(w, httpx.ErrAuthVerificationCodeExpired, nil)
@@ -75,7 +75,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Delete caced verification code immediately once user requested,
 	// so that a callack url in authentication email can be used only once.
 	// This reduces complexity of bussiness logic.
-	if err = s.deleteUserEmailFromCache(key); err != nil {
+	if err = s.deleteUserEmailFromCache(r.Context(), key); err != nil {
 		s.logger.Errorf("An error occurred when deleting cached verification code: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
@@ -140,7 +140,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	s.logger.Debugf("Credentials, access token: %s refresh token: %s access uuid: %s refresh uuid: %s access expired at: %d refresh expired at: %d\n", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
 
-	if err := cacheCredential(s.cache, forgedUserID, credentials); err != nil {
+	if err := cacheCredential(r.Context(), s.cache, forgedUserID, credentials); err != nil {
 		s.logger.Errorf("could not cache credentials: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrInternalServer, nil)
@@ -153,12 +153,12 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s SignInner) fetchUserEmailFromCache(key string) (string, error) {
-	return s.cache.Client.Get(key).Result()
+func (s SignInner) fetchUserEmailFromCache(ctx context.Context, key string) (string, error) {
+	return s.cache.Client.Get(ctx, key).Result()
 }
 
-func (s SignInner) deleteUserEmailFromCache(key string) error {
-	_, err := s.cache.Client.Del(key).Result()
+func (s SignInner) deleteUserEmailFromCache(ctx context.Context, key string) error {
+	_, err := s.cache.Client.Del(ctx, key).Result()
 	return err
 }
 

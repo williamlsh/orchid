@@ -45,7 +45,7 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := deleteCredsFromCache(s.cache, uuids); err != nil {
+	if err := deleteCredsFromCache(r.Context(), s.cache, uuids); err != nil {
 		s.logger.Errorf("could not delete creds form cache: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)

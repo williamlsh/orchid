@@ -51,7 +51,7 @@ func (d Deregistor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete old creds from cache, if error occurs, creds may not exist in cache.
-	if err := deleteCredsFromCache(d.cache, []string{userIDsInfo.UUID, refreshIDsInfo.UUID}); err != nil {
+	if err := deleteCredsFromCache(r.Context(), d.cache, []string{userIDsInfo.UUID, refreshIDsInfo.UUID}); err != nil {
 		d.logger.Errorf("could not delete creds form cache: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
@@ -65,7 +65,7 @@ func (d Deregistor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Deregister user from database, if error occurs, it must be already deregisterd.
-	if d.deregisterUserFromDatabase(r.Context(), realUserUD); err != nil {
+	if err := d.deregisterUserFromDatabase(r.Context(), realUserUD); err != nil {
 		d.logger.Errorf("could not deregister user: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrAuthAlreadyDeregistered, nil)

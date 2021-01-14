@@ -49,7 +49,7 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete old creds from cache, if error occurs, creds may not exist in cache.
-	if err := deleteCredsFromCache(rf.cache, []string{userIDs.UUID, refreshIDs.UUID}); err != nil {
+	if err := deleteCredsFromCache(r.Context(), rf.cache, []string{userIDs.UUID, refreshIDs.UUID}); err != nil {
 		rf.logger.Errorf("could not delete creds form cache: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
@@ -63,7 +63,7 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Save the tokens metadata to redis.
-	if err := cacheCredential(rf.cache, userIDs.ID, credentials); err != nil {
+	if err := cacheCredential(r.Context(), rf.cache, userIDs.ID, credentials); err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
