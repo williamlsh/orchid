@@ -32,6 +32,8 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token, err := rf.parseTokenFromRequest(r)
 	// If there is an error, the token must have expired.
 	if err != nil {
+		rf.logger.Errorf("failed to parse token: %v", err)
+
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
@@ -44,6 +46,8 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Extract token metadata. The error returned is invalid token.
 	userIDs, refreshIDs, err := extractTokenIDsMetadada(token)
 	if err != nil {
+		rf.logger.Errorf("failed to extract token metadata: %v", err)
+
 		httpx.FinalizeResponse(w, httpx.ErrAuthInvalidToken, nil)
 		return
 	}
@@ -93,7 +97,7 @@ func (rf Refresher) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 		r,
 		bodyExtractor,
 		func(t *jwt.Token) (interface{}, error) {
-			return rf.secrets.AccessSecret, nil
+			return []byte(rf.secrets.RefreshSecret), nil
 		},
 		request.WithClaims(jwt.MapClaims{}),
 		request.WithParser(&jwt.Parser{
