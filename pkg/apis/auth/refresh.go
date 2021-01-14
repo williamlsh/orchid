@@ -42,14 +42,14 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract token metadata. The error returned is invalid token.
-	userIDsInfo, refreshIDsInfo, err := extractTokenIDsMetadada(token)
+	userIDs, refreshIDs, err := extractTokenIDsMetadada(token)
 	if err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrAuthInvalidToken, nil)
 		return
 	}
 
 	// Delete old creds from cache, if error occurs, creds may not exist in cache.
-	if err := deleteCredsFromCache(rf.cache, []string{userIDsInfo.UUID, refreshIDsInfo.UUID}); err != nil {
+	if err := deleteCredsFromCache(rf.cache, []string{userIDs.UUID, refreshIDs.UUID}); err != nil {
 		rf.logger.Errorf("could not delete creds form cache: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
@@ -57,13 +57,13 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create new pairs of refresh and access tokens.
-	credentials, err := createCreds(userIDsInfo.ID, rf.secrets)
+	credentials, err := createCreds(userIDs.ID, rf.secrets)
 	if err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
 	// Save the tokens metadata to redis.
-	if err := cacheCredential(rf.cache, userIDsInfo.ID, credentials); err != nil {
+	if err := cacheCredential(rf.cache, userIDs.ID, credentials); err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}

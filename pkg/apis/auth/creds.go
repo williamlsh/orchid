@@ -19,8 +19,8 @@ const (
 	kindRefreshCreds
 )
 
-// IDSInfo is either access info or refresh info.
-type IDSInfo struct {
+// IDs is either access ids or refresh ids.
+type IDs struct {
 	UUID string
 	ID   uint64
 }
@@ -101,7 +101,7 @@ func tokenValid(token *jwt.Token) bool {
 	return false
 }
 
-func extractTokenMetaData(token *jwt.Token, kind credsKind) (*IDSInfo, error) {
+func extractTokenMetaData(token *jwt.Token, kind credsKind) (*IDs, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
 		switch kind {
@@ -114,7 +114,7 @@ func extractTokenMetaData(token *jwt.Token, kind credsKind) (*IDSInfo, error) {
 	return nil, errors.New("invalid token")
 }
 
-func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDSInfo, error) {
+func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDs, error) {
 	uuid, ok := claims[uuidKind].(string)
 	if !ok {
 		return nil, fmt.Errorf("No %s in claims", uuidKind)
@@ -124,7 +124,7 @@ func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDSInfo, err
 		return nil, err
 	}
 
-	return &IDSInfo{
+	return &IDs{
 		UUID: uuid,
 		ID:   userID,
 	}, nil
@@ -132,22 +132,22 @@ func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDSInfo, err
 
 func extractTokenIDsMetaData(token *jwt.Token) (uuids []string, err error) {
 	for _, k := range []credsKind{kindAccessCreds, kindRefreshCreds} {
-		var idsInfo *IDSInfo
-		idsInfo, err = extractTokenMetaData(token, k)
+		var ids *IDs
+		ids, err = extractTokenMetaData(token, k)
 		if err != nil {
 			return
 		}
-		uuids = append(uuids, idsInfo.UUID)
+		uuids = append(uuids, ids.UUID)
 	}
 	return
 }
 
-func extractTokenIDsMetadada(token *jwt.Token) (userIDsInfo *IDSInfo, refreshIDsInfo *IDSInfo, err error) {
-	userIDsInfo, err = extractTokenMetaData(token, kindAccessCreds)
+func extractTokenIDsMetadada(token *jwt.Token) (userIDs *IDs, refreshIDs *IDs, err error) {
+	userIDs, err = extractTokenMetaData(token, kindAccessCreds)
 	if err != nil {
 		return
 	}
-	refreshIDsInfo, err = extractTokenMetaData(token, kindRefreshCreds)
+	refreshIDs, err = extractTokenMetaData(token, kindRefreshCreds)
 	return
 }
 
