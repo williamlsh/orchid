@@ -1,3 +1,5 @@
+PROJECTNAME := $(shell basename "$(PWD)")
+
 .PHONY: build
 build:
 	go build ./...
@@ -30,3 +32,12 @@ down:
 .PHONY: logs
 logs:
 	docker-compose logs -f orchid
+	
+.PHONY: help
+all: help
+help: Makefile
+	@echo
+	@echo " Choose a command run in "$(PROJECTNAME)":"
+	@echo
+	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
+	@echo
