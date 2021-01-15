@@ -131,18 +131,6 @@ func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDs, error) 
 	}, nil
 }
 
-func extractTokenIDsMetaData(token *jwt.Token) (uuids []string, err error) {
-	for _, k := range []credsKind{kindAccessCreds, kindRefreshCreds} {
-		var ids *IDs
-		ids, err = extractTokenMetaData(token, k)
-		if err != nil {
-			return
-		}
-		uuids = append(uuids, ids.UUID)
-	}
-	return
-}
-
 func extractTokenIDsMetadada(token *jwt.Token) (userIDs *IDs, refreshIDs *IDs, err error) {
 	userIDs, err = extractTokenMetaData(token, kindAccessCreds)
 	if err != nil {

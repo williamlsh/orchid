@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"strconv"
 
 	"go.uber.org/zap"
 
@@ -39,13 +40,14 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uuids, err := extractTokenIDsMetaData(token)
+	ids, err := extractTokenMetaData(token, kindAccessCreds)
 	if err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
 
-	if err := deleteCredsFromCache(r.Context(), s.cache, uuids); err != nil {
+	refreshUUID := ids.UUID + "++" + strconv.Itoa(int(ids.ID))
+	if err := deleteCredsFromCache(r.Context(), s.cache, []string{ids.UUID, refreshUUID}); err != nil {
 		s.logger.Errorf("could not delete creds form cache: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
@@ -60,7 +62,7 @@ func (s SignOuter) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 		r,
 		request.AuthorizationHeaderExtractor,
 		func(t *jwt.Token) (interface{}, error) {
-			return s.secrets.AccessSecret, nil
+			return []byte(s.secrets.AccessSecret), nil
 		},
 		request.WithClaims(jwt.MapClaims{}),
 		request.WithParser(&jwt.Parser{
