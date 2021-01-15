@@ -76,8 +76,7 @@ const loginTpl = `
 
         .form-wrap .form-group a {
             display: block;
-
-            width: 30%;
+            width: 200px;
             padding: 10px;
             margin-top: 10px;
             border: black 2px solid;
@@ -100,19 +99,27 @@ const loginTpl = `
         }
 
         .form-wrap .bottom-text {
+            font-size: 3px;
+            text-align: left;
+            /* margin-top: 20px; */
+        }
+
+        .form-wrap .bottom-text a {
             font-size: 5px;
             text-align: left;
             /* margin-top: 20px; */
         }
 
-        footer {
+        .small-footer {
             text-align: center;
             margin-top: 5px;
-            font-size: 5px;
+            font-size: 1px;
+            color: green;
         }
 
-        footer a {
-            color: green;
+        .big-logo-head {
+            font-size: 50px;
+            margin-bottom: 50px;
         }
     </style>
 </head>
@@ -120,7 +127,7 @@ const loginTpl = `
 <body>
     <div id="container">
         <div class="form-wrap">
-            <h1>Overseastu</h1>
+            <h1 class="big-logo-head">overseastu</h1>
             <br />
             <h2>You're almost there</h2>
             <p>
@@ -142,12 +149,13 @@ const loginTpl = `
             </p>
             <hr />
             <p class="bottom-text">
-                Sent by Overseastu ·address XXXXXXXXXXXXX
+                Sent by Overseastu
                 <br />
-                <a href="#">· Careers</a>
-                <a href="#">· Help center</a>
-                <a href="#">· Privacy policy</a>
-                <a href="#">· Terms of service</a>
+                <a class="small-footer" href="#">· Careers</a>
+                <a class="small-footer" href="#">· Help center</a>
+                <br />
+                <a class="small-footer" href="#">· Privacy policy</a>
+                <a class="small-footer" href="#">· Terms of service</a>
             </p>
         </div>
     </div>
@@ -209,8 +217,7 @@ const registerTpl = `
 
         .form-wrap .form-group a {
             display: block;
-
-            width: 30%;
+            width: 200px;
             padding: 10px;
             margin-top: 10px;
             border: black 2px solid;
@@ -233,19 +240,27 @@ const registerTpl = `
         }
 
         .form-wrap .bottom-text {
+            font-size: 3px;
+            text-align: left;
+            /* margin-top: 20px; */
+        }
+
+        .form-wrap .bottom-text a {
             font-size: 5px;
             text-align: left;
             /* margin-top: 20px; */
         }
 
-        footer {
+        .small-footer {
             text-align: center;
             margin-top: 5px;
-            font-size: 5px;
+            font-size: 1px;
+            color: green;
         }
 
-        footer a {
-            color: green;
+        .big-logo-head {
+            font-size: 50px;
+            margin-bottom: 50px;
         }
     </style>
 </head>
@@ -253,7 +268,7 @@ const registerTpl = `
 <body>
     <div id="container">
         <div class="form-wrap">
-            <h1>overseastu</h1>
+            <h1 class="big-logo-head">overseastu</h1>
             <br />
             <h2>You're almost there</h2>
             <p>
@@ -276,12 +291,13 @@ const registerTpl = `
             </p>
             <hr />
             <p class="bottom-text">
-                Sent by Overseastu ·address XXXXXXXXXXXXX
+                Sent by Overseastu
                 <br />
-                <a href="#">· Careers</a>
-                <a href="#">· Help center</a>
-                <a href="#">· Privacy policy</a>
-                <a href="#">· Terms of service</a>
+                <a class="small-footer" href="#">· Careers</a>
+                <a class="small-footer" href="#">· Help center</a>
+                <br />
+                <a class="small-footer" href="#">· Privacy policy</a>
+                <a class="small-footer" href="#">· Terms of service</a>
             </p>
         </div>
     </div>
