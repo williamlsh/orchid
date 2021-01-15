@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -44,7 +45,7 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Extract token metadata. The error returned is invalid token.
-	userIDs, refreshIDs, err := extractTokenIDsMetadada(token)
+	refreshIDs, err := extractTokenMetaData(token, kindRefreshCreds)
 	if err != nil {
 		rf.logger.Errorf("failed to extract token metadata: %v", err)
 
@@ -53,7 +54,8 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete old creds from cache, if error occurs, creds may not exist in cache.
-	if err := deleteCredsFromCache(r.Context(), rf.cache, []string{userIDs.UUID, refreshIDs.UUID}); err != nil {
+	accessUUID := strings.Split(refreshIDs.UUID, "++")[0]
+	if err := deleteCredsFromCache(r.Context(), rf.cache, []string{accessUUID, refreshIDs.UUID}); err != nil {
 		rf.logger.Errorf("could not delete creds form cache: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
@@ -61,13 +63,13 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create new pairs of refresh and access tokens.
-	credentials, err := createCreds(userIDs.ID, rf.secrets)
+	credentials, err := createCreds(refreshIDs.ID, rf.secrets)
 	if err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
 	// Save the tokens metadata to redis.
-	if err := cacheCredential(r.Context(), rf.cache, userIDs.ID, credentials); err != nil {
+	if err := cacheCredential(r.Context(), rf.cache, refreshIDs.ID, credentials); err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}

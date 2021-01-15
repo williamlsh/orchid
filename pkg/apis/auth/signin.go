@@ -139,7 +139,7 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
-	s.logger.Debugf("Credentials, access token: %s refresh token: %s access uuid: %s refresh uuid: %s access expired at: %d refresh expired at: %d", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
+	s.logger.Debugf("Credentials, access-token=%s refresh-token=%s access-uuid=%s refresh-uuid=%s access-expired-at=%d refresh-expired-at=%d", credentials.AccessToken, credentials.RefreshToken, credentials.AccessUUID, credentials.RefreshUUID, credentials.AccessExpireAt, credentials.RefreshExpireAt)
 
 	if err := cacheCredential(r.Context(), s.cache, forgedUserID, credentials); err != nil {
 		s.logger.Errorf("could not cache credentials: %v", err)
