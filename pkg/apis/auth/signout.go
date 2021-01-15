@@ -108,10 +108,10 @@ func (s SignOuter) deregisterUserFromDatabase(ctx context.Context, userid uint64
 
 	sql := `
 		UPDATE users
-		SET deregistered = true,
-		WHERE id = $1;
+		SET deregistered = $1
+		WHERE id = $2;
 	`
-	if _, err := conn.Exec(ctx, sql, userid); err != nil {
+	if _, err := conn.Exec(ctx, sql, true, userid); err != nil {
 		return err
 	}
 
