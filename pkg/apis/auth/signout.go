@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -8,21 +9,26 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
+	"github.com/gorilla/mux"
+	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
 	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
+	"github.com/ossm-org/orchid/pkg/database"
 )
 
 // SignOuter implements a sign out handler.
 type SignOuter struct {
 	logger  *zap.SugaredLogger
+	db      database.Database
 	cache   cache.Cache
 	secrets ConfigOptions
 }
 
 // NewSignOuter returns a new SignOuter.
-func NewSignOuter(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) SignOuter {
+func NewSignOuter(logger *zap.SugaredLogger, db database.Database, cache cache.Cache, secrets ConfigOptions) SignOuter {
 	return SignOuter{
 		logger,
+		db,
 		cache,
 		secrets,
 	}
@@ -54,6 +60,23 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	op := mux.Vars(r)["operation"]
+	if op == "deregister" {
+		realUserUD, err := confuse.DecodeID(ids.ID)
+		if err != nil {
+			httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
+			return
+		}
+
+		// Deregister user from database, if error occurs, it must be already deregisterd.
+		if err := s.deregisterUserFromDatabase(r.Context(), realUserUD); err != nil {
+			s.logger.Errorf("could not deregister user: %v", err)
+
+			httpx.FinalizeResponse(w, httpx.ErrAuthAlreadyDeregistered, nil)
+			return
+		}
+	}
+
 	httpx.FinalizeResponse(w, httpx.Success, nil)
 }
 
@@ -69,4 +92,23 @@ func (s SignOuter) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 			ValidMethods: []string{jwt.SigningMethodHS256.Alg()},
 		}),
 	)
+}
+
+func (s SignOuter) deregisterUserFromDatabase(ctx context.Context, userid uint64) error {
+	conn, err := s.db.Pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	sql := `
+		UPDATE users
+		SET deregistered = true,
+		WHERE id = $1;
+	`
+	if _, err := conn.Exec(ctx, sql, userid); err != nil {
+		return err
+	}
+
+	return nil
 }

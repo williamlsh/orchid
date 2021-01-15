@@ -27,13 +27,10 @@ func Group(
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 
-	r.Handle("/signout", NewSignOuter(logger, cache, secrets)).
+	r.Handle("/{operation:signout|deregister}", NewSignOuter(logger, db, cache, secrets)).
 		Methods(http.MethodGet)
 
 	r.Handle("/token/refresh", NewRefresher(logger, cache, secrets)).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
-
-	r.Handle("/deregister", NewDeregistor(logger, cache, db, secrets)).
-		Methods(http.MethodGet)
 }
