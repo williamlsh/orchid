@@ -78,7 +78,10 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isNewUser, err := s.isNewUser(r.Context(), reqBody.Email)
+	// Email letters should be lower case.
+	lowercaseEmail := strings.ToLower(reqBody.Email)
+
+	isNewUser, err := s.isNewUser(r.Context(), lowercaseEmail)
 	if err != nil {
 		s.logger.Errorf("could not check new user in database: %v", err)
 
@@ -87,13 +90,13 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Evict old code before cache new if any.
-	if err := s.evictUserVerificationCode(r.Context(), reqBody.Email); err != nil && !errors.Is(err, redis.Nil) {
+	if err := s.evictUserVerificationCode(r.Context(), lowercaseEmail); err != nil && !errors.Is(err, redis.Nil) {
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
 	code := randString(verificationCodeLength)
-	if err := s.cacheUserEmail(r.Context(), isNewUser, code, reqBody.Email, verificationCodeExpiration); err != nil {
+	if err := s.cacheUserEmail(r.Context(), isNewUser, code, lowercaseEmail, verificationCodeExpiration); err != nil {
 		s.logger.Errorf("could not cache verification code: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
@@ -102,7 +105,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.logger.Debugf("Send email with isNewUser=%t token=%s", isNewUser, code)
 
 	// Mark operation after caching new code.
-	if err := s.markUserOperation(r.Context(), reqBody.Email, code, verificationCodeExpiration); err != nil {
+	if err := s.markUserOperation(r.Context(), lowercaseEmail, code, verificationCodeExpiration); err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
@@ -115,7 +118,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mail := email.New(s.logger, s.mailConf, reqBody.Email, subject)
+	mail := email.New(s.logger, s.mailConf, lowercaseEmail, subject)
 	if err := mail.Send(content); err != nil {
 		s.logger.Errorf("could not send code in email: %v", err)
 
