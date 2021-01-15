@@ -199,9 +199,10 @@ func (s SignInner) createUser(ctx context.Context, email, username, alias string
 		VALUES($1, $2, $3)
 		ON CONFLICT (email)
 		DO
-			UPDATE SET email = $1, username = $2, alias = $3, deregistered = false;
+			UPDATE SET email = $4, username = $5, alias = $6, deregistered = $7
+		RETURNING id;
 	`
-	if err := conn.QueryRow(ctx, sql, email, alias, email, alias).Scan(&id); err != nil {
+	if err := conn.QueryRow(ctx, sql, email, username, alias, email, username, alias, false).Scan(&id); err != nil {
 		return 0, err
 	}
 
