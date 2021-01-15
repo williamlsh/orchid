@@ -24,6 +24,7 @@ const (
 	ErrUnauthorized
 	ErrAuthInvalidToken
 	ErrAuthAlreadyDeregistered
+	ErrAuthTokenExpired
 
 	ErrServiceUnavailable
 )
@@ -44,6 +45,7 @@ var Msgs = map[Code]string{
 	ErrUnauthorized:                "Unauthorized",
 	ErrAuthInvalidToken:            "Invalid token",
 	ErrAuthAlreadyDeregistered:     "Already deregistered",
+	ErrAuthTokenExpired:            "Token expired",
 
 	ErrServiceUnavailable: " Service unavailable",
 }

@@ -20,6 +20,8 @@ const (
 	kindRefreshCreds
 )
 
+var errTokenExpired = errors.New("credential already expired")
+
 // IDs is either access ids or refresh ids.
 type IDs struct {
 	UUID string
@@ -147,7 +149,7 @@ func deleteCredsFromCache(ctx context.Context, cache cache.Cache, uuids []string
 			return err
 		}
 		if deleted == 0 {
-			return errors.New("Credential already expired")
+			return errTokenExpired
 		}
 	}
 	return nil

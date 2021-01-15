@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -54,8 +55,12 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	refreshUUID := ids.UUID + "++" + strconv.Itoa(int(ids.ID))
 	if err := deleteCredsFromCache(r.Context(), s.cache, []string{ids.UUID, refreshUUID}); err != nil {
-		s.logger.Errorf("could not delete creds form cache: %v", err)
+		if errors.Is(err, errTokenExpired) {
+			httpx.FinalizeResponse(w, httpx.ErrAuthTokenExpired, nil)
+			return
+		}
 
+		s.logger.Errorf("could not delete creds form cache: %v", err)
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
