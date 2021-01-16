@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
@@ -15,17 +16,19 @@ import (
 // AuthenticationMiddleware is a general JWT token validation,
 // it also checks users in cache system.
 type AuthenticationMiddleware struct {
+	once    sync.Once
 	logger  *zap.SugaredLogger
 	cache   cache.Cache
 	secrets ConfigOptions
 
 	AccessUUID    string
 	ForgeedUserID uint64 // ForgeedUserID is a forged id responding to frontend
+	UserID        uint64
 }
 
 // New returns a new AuthenticationMiddleware
-func New(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) AuthenticationMiddleware {
-	return AuthenticationMiddleware{
+func New(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) *AuthenticationMiddleware {
+	return &AuthenticationMiddleware{
 		logger:  logger,
 		cache:   cache,
 		secrets: secrets,
@@ -85,11 +88,14 @@ func (amw *AuthenticationMiddleware) Middleware(next http.Handler) http.Handler 
 
 // GetUserID returns a parsed and existing user's real id in databae.
 func (amw *AuthenticationMiddleware) GetUserID() uint64 {
-	realID, err := confuse.DecodeID(amw.ForgeedUserID)
-	if err != nil {
-		panic(err)
-	}
-	return realID
+	amw.once.Do(func() {
+		realID, err := confuse.DecodeID(amw.ForgeedUserID)
+		if err != nil {
+			panic(err)
+		}
+		amw.UserID = realID
+	})
+	return amw.UserID
 }
 
 // isUserExistInCache checks whether user id exists in cache.

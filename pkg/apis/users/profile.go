@@ -19,13 +19,13 @@ type userProfile struct {
 
 type profile struct {
 	logger *zap.SugaredLogger
-	amw    auth.AuthenticationMiddleware
+	amw    *auth.AuthenticationMiddleware
 	db     database.Database
 }
 
 func newProfile(
 	logger *zap.SugaredLogger,
-	amw auth.AuthenticationMiddleware,
+	amw *auth.AuthenticationMiddleware,
 	db database.Database,
 ) profile {
 	return profile{
@@ -48,7 +48,7 @@ func (p profile) updateProfile() http.HandlerFunc {
 		}
 
 		if err := p.updateUsername(r.Context(), p.amw.GetUserID(), reqBody.Username); err != nil {
-			p.logger.Errorf("failed to update username: %v", err)
+			p.logger.Errorf("failed to update profile: %v", err)
 
 			httpx.FinalizeResponse(w, httpx.ErrUsernameAlreadyInUse, nil)
 			return
@@ -64,7 +64,7 @@ func (p profile) getProfile() http.HandlerFunc {
 		userID := p.amw.GetUserID()
 		userProfile, err := p.getUsername(r.Context(), userID)
 		if err != nil {
-			p.logger.Errorf("failed to get username, userid=%d, err=%v", userID, err)
+			p.logger.Errorf("failed to get profile, userid=%d, err=%v", userID, err)
 
 			httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 			return

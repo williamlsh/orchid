@@ -18,7 +18,7 @@ import (
 
 type account struct {
 	logger   *zap.SugaredLogger
-	amw      AuthenticationMiddleware
+	amw      *AuthenticationMiddleware
 	cache    cache.Cache
 	db       database.Database
 	secrets  ConfigOptions
@@ -27,7 +27,7 @@ type account struct {
 
 func newAccount(
 	logger *zap.SugaredLogger,
-	amw AuthenticationMiddleware,
+	amw *AuthenticationMiddleware,
 	cache cache.Cache,
 	db database.Database,
 	secrets ConfigOptions,
