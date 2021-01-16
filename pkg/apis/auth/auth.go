@@ -35,7 +35,7 @@ func Group(
 		Headers("Content-Type", "application/json")
 
 	// The account handler need authentication middleware while others don't need,
-	// so we use a new subrouter.
+	// so we use a new subrouter in order to not affect other handlers.
 	sr := r.NewRoute().Subrouter()
 	amw := New(logger, cache, secrets)
 

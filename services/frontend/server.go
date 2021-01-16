@@ -50,15 +50,16 @@ func (s *Server) Run() error {
 
 // createServeMux registers all routers.
 func (s *Server) createServeMux() http.Handler {
-	r := mux.NewRouter()
-	r.Use(s.Middleware)
+	mux := mux.NewRouter()
+	mux.Use(s.Middleware)
 
-	sr := r.PathPrefix("/api").Subrouter()
+	r := mux.PathPrefix("/api")
 
 	// Routers of authentication.
-	auth.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, sr)
+	// We use subrouter in every mux group, so that every group can use their own middleware and doesn't effect other groups.
+	auth.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, r.Subrouter())
 
-	return r
+	return mux
 }
 
 // Middleware implements mux.Middleware. It's a general recovery middleware to catch all panics in every route.
