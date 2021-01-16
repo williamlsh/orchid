@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/jackc/pgx/v4"
 	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
 	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
@@ -185,12 +186,6 @@ func (s SignInner) gerUserIDByEmail(ctx context.Context, email string) (uint64, 
 // createUser creates a new user.
 // A user has unique email and unique username but may not alias.
 func (s SignInner) createUser(ctx context.Context, email, username, alias string) (uint64, error) {
-	conn, err := s.db.Pool.Acquire(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer conn.Release()
-
 	var id uint64
 
 	// If a deregistered user register again, just upsert user.
@@ -202,7 +197,10 @@ func (s SignInner) createUser(ctx context.Context, email, username, alias string
 			UPDATE SET email = $4, username = $5, alias = $6, deregistered = $7
 		RETURNING id;
 	`
-	if err := conn.QueryRow(ctx, sql, email, username, alias, email, username, alias, false).Scan(&id); err != nil {
+
+	if err := s.db.InTx(ctx, func(tx pgx.Tx) error {
+		return tx.QueryRow(ctx, sql, email, username, alias, email, username, alias, false).Scan(&id)
+	}); err != nil {
 		return 0, err
 	}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v4"
 	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
 	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
@@ -100,20 +101,14 @@ func (s SignOuter) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 }
 
 func (s SignOuter) deregisterUserFromDatabase(ctx context.Context, userid uint64) error {
-	conn, err := s.db.Pool.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
 	sql := `
 		UPDATE users
 		SET deregistered = $1
 		WHERE id = $2;
 	`
-	if _, err := conn.Exec(ctx, sql, true, userid); err != nil {
-		return err
-	}
 
-	return nil
+	return s.db.InTx(ctx, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, sql, true, userid)
+		return err
+	})
 }
