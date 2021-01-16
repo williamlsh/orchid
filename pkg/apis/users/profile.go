@@ -79,7 +79,7 @@ func (p profile) updateUsername(ctx context.Context, userid uint64, new string) 
 	sql := `
 		UPDATE users
 		SET username = $1
-		WHERE userid = $2;
+		WHERE id = $2;
 	`
 	return p.db.InTx(ctx, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, sql, new, userid)
@@ -99,7 +99,7 @@ func (p profile) getUsername(ctx context.Context, userid uint64) (*userProfile, 
 	sql := `
 		SELECT username, email
 		FROM users
-		WHERE userid = $1;
+		WHERE id = $1;
 	`
 	err = conn.QueryRow(ctx, sql, userid).Scan(&profile.Username, &profile.Email)
 	return &profile, err
