@@ -1,10 +1,10 @@
 package httpx
 
 // Code is an custom HTTP code.
-// It also implements error interface.
 type Code int
 
-func (c Code) Error() string {
+// Msg returns the interpretation of code.
+func (c Code) Msg() string {
 	return Msgs[c]
 }
 

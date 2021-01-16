@@ -82,7 +82,7 @@ func TestMiddleware(t *testing.T) {
 		t.Fatal(err)
 	}
 	if response.Code != httpx.Success {
-		t.Errorf("returned: %s, want: %s", response.Code.Error(), httpx.Success.Error())
+		t.Errorf("returned: %s, want: %s", response.Code.Msg(), httpx.Success.Msg())
 	}
 
 	fmt.Printf("User-id: %d\n", amw.GetUserID())
