@@ -54,14 +54,13 @@ func (s *Server) createServeMux() http.Handler {
 	mux := mux.NewRouter()
 	mux.Use(s.Middleware)
 
-	r := mux.PathPrefix("/api")
+	r := mux.PathPrefix("/api").Subrouter()
 
 	// Routers of authentication.
 	// We use subrouter in every mux group, so that every group can use their own middleware and doesn't effect other groups.
-	authRouter := r.Subrouter()
-	auth.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, authRouter)
+	auth.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, r)
 
-	// Routers of users.
+	// Routers of users. They are under /api/user
 	userRouter := r.PathPrefix("/user").Subrouter()
 	users.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, userRouter)
 
