@@ -32,7 +32,7 @@ func (db Database) Migrate(ctx context.Context) error {
 		newVersion := version + 1
 		db.logger.Debug("* Migrating to version:", newVersion)
 
-		tx, err := conn.Begin(ctx)
+		tx, err := conn.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 		if err != nil {
 			return fmt.Errorf("[Migration v%d] %v", newVersion, err)
 		}
