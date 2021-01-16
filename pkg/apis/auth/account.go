@@ -113,7 +113,7 @@ func (a account) updateUserEmail(ctx context.Context, userid uint64, new string)
 	sql := `
 		UPDATE users
 		SET email = $1
-		WHERE userid = $2;
+		WHERE id = $2;
 	`
 	return a.db.InTx(ctx, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, sql, new, userid)
