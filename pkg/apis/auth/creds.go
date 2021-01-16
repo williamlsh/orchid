@@ -19,10 +19,14 @@ const (
 	kindRefreshCreds
 )
 
-// letterBytes is used to generate random string.
 const (
-	letterBytes          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// letterBytes is used to generate random string.
+	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// letterBytesLowercase is used to generate random string in lowercase.
 	letterBytesLowercase = "abcdefghijklmnopqrstuvwxyz"
+
+	tokenAccessExpiration  = 15 * time.Minute
+	tokenRefreshExpiration = 7 * 24 * time.Hour
 )
 
 var errTokenExpired = errors.New("credential already expired")
@@ -49,8 +53,8 @@ type CredsPairInfo struct {
 func createCreds(userid uint64, secrets ConfigOptions) (*CredsPairInfo, error) {
 	accessUUID := uuid.NewV4().String()
 	refreshUUID := accessUUID + "++" + strconv.Itoa(int(userid))
-	accessExpiredAt := time.Now().Add(time.Minute * 15).Unix()
-	refreshExpiredAt := time.Now().Add(time.Hour * 24 * 7).Unix()
+	accessExpiredAt := time.Now().Add(tokenAccessExpiration).Unix()
+	refreshExpiredAt := time.Now().Add(tokenRefreshExpiration).Unix()
 
 	accessClaims := jwt.MapClaims{
 		"authorized":  true,
