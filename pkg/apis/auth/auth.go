@@ -38,6 +38,7 @@ func Group(
 	// so we use a new subrouter in order to not affect other handlers.
 	sr := r.NewRoute().Subrouter()
 	amw := New(logger, cache, secrets)
+	sr.Use(amw.Middleware)
 
 	sr.Handle("/account", newAccount(logger, amw, cache, db, secrets, email)).
 		Methods(http.MethodPost).
