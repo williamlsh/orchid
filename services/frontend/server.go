@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ossm-org/orchid/pkg/apis/auth"
+	"github.com/ossm-org/orchid/pkg/apis/users"
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
 	"github.com/ossm-org/orchid/pkg/email"
@@ -57,7 +58,12 @@ func (s *Server) createServeMux() http.Handler {
 
 	// Routers of authentication.
 	// We use subrouter in every mux group, so that every group can use their own middleware and doesn't effect other groups.
-	auth.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, r.Subrouter())
+	authRouter := r.Subrouter()
+	auth.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, authRouter)
+
+	// Routers of users.
+	userRouter := r.PathPrefix("/user").Subrouter()
+	users.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, userRouter)
 
 	return mux
 }

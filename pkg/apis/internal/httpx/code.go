@@ -27,6 +27,8 @@ const (
 	ErrAuthTokenExpired
 	ErrAuthEmailAlreadyInUse
 
+	ErrUsernameAlreadyInUse
+
 	ErrServiceUnavailable
 )
 
@@ -48,6 +50,7 @@ var Msgs = map[Code]string{
 	ErrAuthAlreadyDeregistered:     "Already deregistered",
 	ErrAuthTokenExpired:            "Token expired",
 	ErrAuthEmailAlreadyInUse:       "User email already in use",
+	ErrUsernameAlreadyInUse:        "Username already in use",
 
 	ErrServiceUnavailable: " Service unavailable",
 }

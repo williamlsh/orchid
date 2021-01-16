@@ -39,7 +39,7 @@ func Group(
 	sr := r.NewRoute().Subrouter()
 	amw := New(logger, cache, secrets)
 
-	sr.Handle("/token/refresh", newAccount(logger, amw, cache, db, secrets, email)).
+	sr.Handle("/account", newAccount(logger, amw, cache, db, secrets, email)).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 }
