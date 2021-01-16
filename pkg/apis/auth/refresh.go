@@ -63,13 +63,13 @@ func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create new pairs of refresh and access tokens.
-	credentials, err := createCreds(refreshIDs.ID, rf.secrets)
+	credentials, err := createCreds(refreshIDs.UserID, rf.secrets)
 	if err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
 	// Save the tokens metadata to redis.
-	if err := cacheCredential(r.Context(), rf.cache, refreshIDs.ID, credentials); err != nil {
+	if err := cacheCredential(r.Context(), rf.cache, refreshIDs.UserID, credentials); err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}

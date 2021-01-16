@@ -25,7 +25,7 @@ var errTokenExpired = errors.New("credential already expired")
 // IDs is either access ids or refresh ids.
 type IDs struct {
 	UUID string
-	ID   uint64
+	UserID   uint64
 }
 
 // CredsPairInfo is an authenticated user credentials collection.
@@ -129,7 +129,7 @@ func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDs, error) 
 
 	return &IDs{
 		UUID: uuid,
-		ID:   userID,
+		UserID:   userID,
 	}, nil
 }
 

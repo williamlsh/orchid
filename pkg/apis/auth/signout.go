@@ -53,7 +53,7 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshUUID := ids.UUID + "++" + strconv.Itoa(int(ids.ID))
+	refreshUUID := ids.UUID + "++" + strconv.Itoa(int(ids.UserID))
 	if err := deleteCredsFromCache(r.Context(), s.cache, []string{ids.UUID, refreshUUID}); err != nil {
 		if errors.Is(err, errTokenExpired) {
 			httpx.FinalizeResponse(w, httpx.ErrAuthTokenExpired, nil)
@@ -67,7 +67,7 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	op := mux.Vars(r)["operation"]
 	if op == "deregister" {
-		realUserUD, err := confuse.DecodeID(ids.ID)
+		realUserUD, err := confuse.DecodeID(ids.UserID)
 		if err != nil {
 			httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 			return
