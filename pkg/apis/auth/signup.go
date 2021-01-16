@@ -34,25 +34,25 @@ const (
 
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
-// SignUpper implements a sign up handler.
-// SignUpper authenticates users by email thus combines both register and login operations
+// signUpper implements a sign up handler.
+// signUpper authenticates users by email thus combines both register and login operations
 // and distinguishes these operatons from checking existing user or new user.
 // It sends an authentication email to user.
-type SignUpper struct {
+type signUpper struct {
 	logger   *zap.SugaredLogger
 	mailConf email.ConfigOptions
 	cache    cache.Cache
 	db       database.Database
 }
 
-// NewSignUpper returns a new SignUpper.
-func NewSignUpper(
+// newSignUpper returns a new SignUpper.
+func newSignUpper(
 	logger *zap.SugaredLogger,
 	cache cache.Cache,
 	db database.Database,
 	mailConf email.ConfigOptions,
-) SignUpper {
-	return SignUpper{
+) signUpper {
+	return signUpper{
 		logger,
 		mailConf,
 		cache,
@@ -60,7 +60,7 @@ func NewSignUpper(
 	}
 }
 
-func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s signUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var reqBody struct {
 		Email string
 	}
@@ -86,13 +86,13 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Evict old code before cache new if any.
-	if err := s.evictUserVerificationCode(r.Context(), lowercaseEmail); err != nil && !errors.Is(err, redis.Nil) {
+	if err := evictUserVerificationCode(r.Context(), s.cache, lowercaseEmail); err != nil && !errors.Is(err, redis.Nil) {
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
 
 	code := randString(verificationCodeLength, letterBytes)
-	if err := s.cacheUserEmail(r.Context(), isNewUser, code, lowercaseEmail, verificationCodeExpiration); err != nil {
+	if err := cacheUserEmail(r.Context(), s.cache, isNewUser, code, lowercaseEmail, verificationCodeExpiration); err != nil {
 		s.logger.Errorf("could not cache verification code: %v", err)
 
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
@@ -101,7 +101,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.logger.Debugf("Send email with isNewUser=%t token=%s", isNewUser, code)
 
 	// Mark operation after caching new code.
-	if err := s.markUserOperation(r.Context(), lowercaseEmail, code, verificationCodeExpiration); err != nil {
+	if err := markUserOperation(r.Context(), s.cache, lowercaseEmail, code, verificationCodeExpiration); err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrServiceUnavailable, nil)
 		return
 	}
@@ -128,7 +128,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // cacheUserEmail caches user auth operation info with expiration value of verificationCodeExpiration.
 // One user with unique email only has one cache info in redis.
 // The SignInner handler will use cache info to authenticate user.
-func (s SignUpper) cacheUserEmail(ctx context.Context, isNewUser bool, code, email string, expiration time.Duration) error {
+func cacheUserEmail(ctx context.Context, cache cache.Cache, isNewUser bool, code, email string, expiration time.Duration) error {
 	// Embed code in cache key, then in /signin, we can construct this key from user submit code again.
 	// Use email as value, then in /signin we can handle user with this email.
 	key := cacheVerificationCodeKeyPrefix + ":" + code
@@ -140,9 +140,8 @@ func (s SignUpper) cacheUserEmail(ctx context.Context, isNewUser bool, code, ema
 	} else {
 		val = operationLogIn + ":" + email
 	}
-	s.logger.Debugf("Cache user code with email, key=%s val=%s", key, val)
 
-	return s.cache.Client.Set(ctx, key, val, expiration).Err()
+	return cache.Client.Set(ctx, key, val, expiration).Err()
 }
 
 // markUserOperation is an helper for cacheUserEmail.
@@ -150,19 +149,18 @@ func (s SignUpper) cacheUserEmail(ctx context.Context, isNewUser bool, code, ema
 // When user frequently request SignUpper handler to receive emails, we always mark the latest operation,
 // delete the old cache, making only the latest operation is valid. This reduces SignInner handler complexity.
 // When SignInner handler receives code from request, it handles only the latest verification code.
-func (s SignUpper) markUserOperation(ctx context.Context, email, code string, expiration time.Duration) error {
+func markUserOperation(ctx context.Context, cache cache.Cache, email, code string, expiration time.Duration) error {
 	key := cacheVerificationCodeKeyPrefix + ":" + email
-	s.logger.Debugf("Mark user operation in cache: key=%s val=%s", key, code)
 
-	return s.cache.Client.Set(ctx, key, code, expiration).Err()
+	return cache.Client.Set(ctx, key, code, expiration).Err()
 }
 
 // evictUserVerificationCode is a helper for cacheUserEmail.
 // It's called before cacheUserEmail.
-func (s SignUpper) evictUserVerificationCode(ctx context.Context, email string) error {
+func evictUserVerificationCode(ctx context.Context, cache cache.Cache, email string) error {
 	// First, get code from email.
 	key1 := cacheVerificationCodeKeyPrefix + ":" + email
-	code, err := s.cache.Client.Get(ctx, key1).Result()
+	code, err := cache.Client.Get(ctx, key1).Result()
 	if err != nil {
 		// May return redis.Nil error, caller should check and skip this error.
 		return err
@@ -170,12 +168,11 @@ func (s SignUpper) evictUserVerificationCode(ctx context.Context, email string) 
 
 	// Second, delete code from code key.
 	key2 := cacheVerificationCodeKeyPrefix + ":" + code
-	s.logger.Debugf("Evict cache verification code, key=%s", key2)
-	return s.cache.Client.Del(ctx, key2).Err()
+	return cache.Client.Del(ctx, key2).Err()
 }
 
 // isNewUser checks whether a signing up user is a new user by search its email in database.
-func (s SignUpper) isNewUser(ctx context.Context, email string) (bool, error) {
+func (s signUpper) isNewUser(ctx context.Context, email string) (bool, error) {
 	conn, err := s.db.Pool.Acquire(ctx)
 	if err != nil {
 		return false, err

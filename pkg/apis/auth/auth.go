@@ -19,18 +19,27 @@ func Group(
 	secrets ConfigOptions,
 	r *mux.Router,
 ) {
-	r.Handle("/signup", NewSignUpper(logger, cache, db, email)).
+	r.Handle("/signup", newSignUpper(logger, cache, db, email)).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 
-	r.Handle("/signin", NewSignInner(logger, cache, db, secrets)).
+	r.Handle("/signin", newSignInner(logger, cache, db, secrets)).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 
-	r.Handle("/{operation:signout|deregister}", NewSignOuter(logger, db, cache, secrets)).
+	r.Handle("/{operation:signout|deregister}", newSignOuter(logger, db, cache, secrets)).
 		Methods(http.MethodGet)
 
-	r.Handle("/token/refresh", NewRefresher(logger, cache, secrets)).
+	r.Handle("/token/refresh", newRefresher(logger, cache, secrets)).
+		Methods(http.MethodPost).
+		Headers("Content-Type", "application/json")
+
+	// The account handler need authentication middleware while others don't need,
+	// so we use a new subrouter.
+	sr := r.NewRoute().Subrouter()
+	amw := New(logger, cache, secrets)
+
+	sr.Handle("/token/refresh", newAccount(logger, amw, cache, db, secrets, email)).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 }

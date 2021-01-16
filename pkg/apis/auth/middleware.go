@@ -92,11 +92,6 @@ func (amw *AuthenticationMiddleware) GetUserID() uint64 {
 	return realID
 }
 
-// GetForgedUserID returns a parsed and existing user's id in forged format.
-func (amw *AuthenticationMiddleware) GetForgedUserID() uint64 {
-	return amw.ForgeedUserID
-}
-
 // isUserExistInCache checks whether user id exists in cache.
 // Any user's id that is not in cache system is not authenticated and valid.
 func (amw *AuthenticationMiddleware) isUserIDExistInCache(ctx context.Context, uuid string) (bool, error) {

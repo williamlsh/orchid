@@ -18,17 +18,17 @@ import (
 	"github.com/ossm-org/orchid/pkg/database"
 )
 
-// SignOuter implements a sign out handler.
-type SignOuter struct {
+// signOuter implements a sign out handler.
+type signOuter struct {
 	logger  *zap.SugaredLogger
 	db      database.Database
 	cache   cache.Cache
 	secrets ConfigOptions
 }
 
-// NewSignOuter returns a new SignOuter.
-func NewSignOuter(logger *zap.SugaredLogger, db database.Database, cache cache.Cache, secrets ConfigOptions) SignOuter {
-	return SignOuter{
+// newSignOuter returns a new SignOuter.
+func newSignOuter(logger *zap.SugaredLogger, db database.Database, cache cache.Cache, secrets ConfigOptions) signOuter {
+	return signOuter{
 		logger,
 		db,
 		cache,
@@ -36,7 +36,7 @@ func NewSignOuter(logger *zap.SugaredLogger, db database.Database, cache cache.C
 	}
 }
 
-func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s signOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token, err := s.parseTokenFromRequest(r)
 	if err != nil {
 		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
@@ -86,7 +86,7 @@ func (s SignOuter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	httpx.FinalizeResponse(w, httpx.Success, nil)
 }
 
-func (s SignOuter) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
+func (s signOuter) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 	return request.ParseFromRequest(
 		r,
 		request.AuthorizationHeaderExtractor,
@@ -100,7 +100,7 @@ func (s SignOuter) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 	)
 }
 
-func (s SignOuter) deregisterUserFromDatabase(ctx context.Context, userid uint64) error {
+func (s signOuter) deregisterUserFromDatabase(ctx context.Context, userid uint64) error {
 	sql := `
 		UPDATE users
 		SET deregistered = $1

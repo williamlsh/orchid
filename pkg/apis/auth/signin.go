@@ -16,25 +16,25 @@ import (
 	"go.uber.org/zap"
 )
 
-// SignInner implements a sign in handler.
-// SignInner authenticates users by email thus combines both signup and signin operations
+// signInner implements a sign in handler.
+// signInner authenticates users by email thus combines both signup and signin operations
 // and distinguishes these operatons from checking existing user or new user.
 // It checks token in authentication email previously sent.
-type SignInner struct {
+type signInner struct {
 	logger  *zap.SugaredLogger
 	cache   cache.Cache
 	db      database.Database
 	secrets ConfigOptions
 }
 
-// NewSignInner returns a new SignInner.
-func NewSignInner(
+// newSignInner returns a new SignInner.
+func newSignInner(
 	logger *zap.SugaredLogger,
 	cache cache.Cache,
 	db database.Database,
 	secrets ConfigOptions,
-) SignInner {
-	return SignInner{
+) signInner {
+	return signInner{
 		logger,
 		cache,
 		db,
@@ -42,7 +42,7 @@ func NewSignInner(
 	}
 }
 
-func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s signInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// The register operation submits alias in request body while login operation doesn't.
 	var reqBody struct {
 		Alias, Code, Operation string
@@ -155,16 +155,16 @@ func (s SignInner) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s SignInner) fetchUserEmailFromCache(ctx context.Context, key string) (string, error) {
+func (s signInner) fetchUserEmailFromCache(ctx context.Context, key string) (string, error) {
 	return s.cache.Client.Get(ctx, key).Result()
 }
 
-func (s SignInner) deleteUserEmailFromCache(ctx context.Context, key string) error {
+func (s signInner) deleteUserEmailFromCache(ctx context.Context, key string) error {
 	_, err := s.cache.Client.Del(ctx, key).Result()
 	return err
 }
 
-func (s SignInner) gerUserIDByEmail(ctx context.Context, email string) (uint64, error) {
+func (s signInner) gerUserIDByEmail(ctx context.Context, email string) (uint64, error) {
 	conn, err := s.db.Pool.Acquire(ctx)
 	if err != nil {
 		return 0, err
@@ -185,7 +185,7 @@ func (s SignInner) gerUserIDByEmail(ctx context.Context, email string) (uint64, 
 
 // createUser creates a new user.
 // A user has unique email and unique username but may not alias.
-func (s SignInner) createUser(ctx context.Context, email, username, alias string) (uint64, error) {
+func (s signInner) createUser(ctx context.Context, email, username, alias string) (uint64, error) {
 	var id uint64
 
 	// If a deregistered user register again, just upsert user.
@@ -216,7 +216,7 @@ func splitOpAndEmail(val string) (operation string, email string) {
 // generateUsername generates a globally unique username.
 // It generates username from email, if this usename is not unique,
 // then it generates a random one.
-func (s SignInner) generateUsername(ctx context.Context, email string) (string, error) {
+func (s signInner) generateUsername(ctx context.Context, email string) (string, error) {
 	conn, err := s.db.Pool.Acquire(ctx)
 	if err != nil {
 		return "", err

@@ -13,23 +13,23 @@ import (
 	"github.com/ossm-org/orchid/pkg/cache"
 )
 
-// Refresher implements a token refresh handler.
-type Refresher struct {
+// refresher implements a token refresh handler.
+type refresher struct {
 	logger  *zap.SugaredLogger
 	cache   cache.Cache
 	secrets ConfigOptions
 }
 
-// NewRefresher returns a new Refresher.
-func NewRefresher(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) Refresher {
-	return Refresher{
+// newRefresher returns a new Refresher.
+func newRefresher(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) refresher {
+	return refresher{
 		logger,
 		cache,
 		secrets,
 	}
 }
 
-func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (rf refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token, err := rf.parseTokenFromRequest(r)
 	// If there is an error, the token must have expired.
 	if err != nil {
@@ -93,7 +93,7 @@ func (n noop) ExtractToken(r *http.Request) (string, error) {
 	return reqBody.RefreshToken, nil
 }
 
-func (rf Refresher) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
+func (rf refresher) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
 	var bodyExtractor noop
 	return request.ParseFromRequest(
 		r,
