@@ -144,15 +144,6 @@ func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDs, error) 
 	}, nil
 }
 
-func extractTokenIDsMetadada(token *jwt.Token) (userIDs *IDs, refreshIDs *IDs, err error) {
-	userIDs, err = extractTokenMetaData(token, kindAccessCreds)
-	if err != nil {
-		return
-	}
-	refreshIDs, err = extractTokenMetaData(token, kindRefreshCreds)
-	return
-}
-
 func deleteCredsFromCache(ctx context.Context, cache cache.Cache, uuids []string) error {
 	for _, id := range uuids {
 		deleted, err := cache.Client.Del(ctx, id).Result()
