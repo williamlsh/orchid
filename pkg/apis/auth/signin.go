@@ -237,5 +237,5 @@ func (s SignInner) generateUsername(ctx context.Context, email string) (string, 
 	}
 
 	// TODO: potential conflict if random string is still not unique.
-	return randString(7), nil
+	return randString(12, letterBytesLowercase), nil
 }

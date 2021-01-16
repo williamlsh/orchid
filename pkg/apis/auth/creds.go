@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -13,19 +14,25 @@ import (
 	"github.com/ossm-org/orchid/pkg/cache"
 )
 
-type credsKind int
-
 const (
 	kindAccessCreds credsKind = iota
 	kindRefreshCreds
 )
 
+// letterBytes is used to generate random string.
+const (
+	letterBytes          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	letterBytesLowercase = "abcdefghijklmnopqrstuvwxyz"
+)
+
 var errTokenExpired = errors.New("credential already expired")
+
+type credsKind int
 
 // IDs is either access ids or refresh ids.
 type IDs struct {
-	UUID string
-	UserID   uint64
+	UUID   string
+	UserID uint64
 }
 
 // CredsPairInfo is an authenticated user credentials collection.
@@ -128,8 +135,8 @@ func readIDSInfoFromClaims(claims jwt.MapClaims, uuidKind string) (*IDs, error) 
 	}
 
 	return &IDs{
-		UUID: uuid,
-		UserID:   userID,
+		UUID:   uuid,
+		UserID: userID,
 	}, nil
 }
 
@@ -153,4 +160,13 @@ func deleteCredsFromCache(ctx context.Context, cache cache.Cache, uuids []string
 		}
 	}
 	return nil
+}
+
+// randString returns a n length random string from source letters.
+func randString(n int, letters string) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }

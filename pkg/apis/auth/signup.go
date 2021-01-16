@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"math/rand"
 	"net"
 	"net/http"
 	"regexp"
@@ -28,9 +27,6 @@ const (
 
 	verificationCodeLength     = 12
 	verificationCodeExpiration = 2 * time.Hour
-
-	// letterBytes is used to generate random string.
-	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 	operationRegister = "register"
 	operationLogIn    = "login"
@@ -95,7 +91,7 @@ func (s SignUpper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code := randString(verificationCodeLength)
+	code := randString(verificationCodeLength, letterBytes)
 	if err := s.cacheUserEmail(r.Context(), isNewUser, code, lowercaseEmail, verificationCodeExpiration); err != nil {
 		s.logger.Errorf("could not cache verification code: %v", err)
 
@@ -196,15 +192,6 @@ func (s SignUpper) isNewUser(ctx context.Context, email string) (bool, error) {
 
 	// An existing user is not a new user!
 	return !exists, nil
-}
-
-// randString returns a n length random string.
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
 }
 
 // isEmailValid checks if the email provided passes the required structure
