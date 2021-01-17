@@ -21,7 +21,7 @@ func Group(
 	r *mux.Router,
 ) {
 	amw := auth.New(logger, cache, secrets)
-	r.Use(amw.Middleware)
+	r.Use(amw.MiddlewareMustAuthenticate)
 
 	// The user profile handlers.
 	p := newProfile(logger, amw, db)

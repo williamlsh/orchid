@@ -35,8 +35,22 @@ func New(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) *A
 	}
 }
 
-// Middleware Implements mux.Middleware, which will be called for each request that needs authentication.
-func (amw *AuthenticationMiddleware) Middleware(next http.Handler) http.Handler {
+// MiddlewareOptionallyAuthenticate can be used in route which optionally needs authentication.
+// If a user is authenticated, this middleware parses the request token and extract user metedata.
+// You can use either this middleware or MiddlewareMustAuthenticate but not both.
+func (amw *AuthenticationMiddleware) MiddlewareOptionallyAuthenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") == "" {
+			amw.logger.Debug("A user without token")
+			next.ServeHTTP(w, r)
+		} else {
+			amw.MiddlewareMustAuthenticate(next).ServeHTTP(w, r)
+		}
+	})
+}
+
+// MiddlewareMustAuthenticate Implements mux.MiddlewareMustAuthenticate, which will be called for each request that needs authentication.
+func (amw *AuthenticationMiddleware) MiddlewareMustAuthenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, err := request.ParseFromRequest(
 			r,
