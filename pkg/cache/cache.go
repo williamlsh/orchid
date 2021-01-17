@@ -28,21 +28,20 @@ type ConfigOptions struct {
 // New returns a new redis cache.
 func New(logger *zap.SugaredLogger, config *ConfigOptions) Cache {
 	opts := &redis.Options{
-		Addr:     config.Addr,
-		Password: config.Passwd,
-		OnConnect: func(ctx context.Context, cn *redis.Conn) error {
-			if _, err := cn.Ping(ctx).Result(); err != nil {
-				return err
-			}
-			logger.Debugf("Successfully connected to Redis: %s", config.Addr)
-			return nil
-		},
+		Addr:        config.Addr,
+		Password:    config.Passwd,
 		DB:          commonDb,
 		MaxRetries:  maxRetry,
 		IdleTimeout: idleTimeOut,
 	}
 
+	client := redis.NewClient(opts)
+	if _, err := client.Ping(context.Background()).Result(); err != nil {
+		panic(err)
+	}
+	logger.Debugf("Successfully connected to redis, address=%s", config.Addr)
+
 	return Cache{
-		Client: redis.NewClient(opts),
+		Client: client,
 	}
 }
