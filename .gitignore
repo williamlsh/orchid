@@ -2,6 +2,5 @@ dist
 .env
 orchid
 log
-*test.sh
 .idea
 db/redis

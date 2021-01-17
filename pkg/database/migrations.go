@@ -32,7 +32,7 @@ func (db Database) Migrate(ctx context.Context) error {
 		newVersion := version + 1
 		db.logger.Debug("* Migrating to version:", newVersion)
 
-		tx, err := conn.Begin(ctx)
+		tx, err := conn.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
 		if err != nil {
 			return fmt.Errorf("[Migration v%d] %v", newVersion, err)
 		}
@@ -75,6 +75,7 @@ func (db Database) IsSchemaUpToDate(ctx context.Context) error {
 	if currentVersion < schemaVersion {
 		return fmt.Errorf(`the database schema is not up to date: current=v%d expected=v%d`, currentVersion, schemaVersion)
 	}
+	db.logger.Debug("Database schema is up to date")
 	return nil
 }
 

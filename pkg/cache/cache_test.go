@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func TestCache(t *testing.T) {
 	testCase := &TestCase{
 		Exist: 0,
 	}
-	cache.Client.Del(testKey)
-	exist := cache.Client.Exists(testKey).Val()
+	cache.Client.Del(context.Background(), testKey)
+	exist := cache.Client.Exists(context.Background(), testKey).Val()
 	assert.Equal(t, exist, testCase.Exist)
 }

@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/log/zapadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.uber.org/zap"
@@ -37,4 +39,32 @@ func newPool(logger *zap.SugaredLogger, dsn string) *pgxpool.Pool {
 	}
 
 	return pool
+}
+
+// InTx runs the given function f within a transaction with isolation level serialization by default.
+func (db Database) InTx(ctx context.Context, fn ...func(tx pgx.Tx) error) error {
+	conn, err := db.Pool.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("acquiring connection: %w", err)
+	}
+	defer conn.Release()
+
+	tx, err := conn.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable})
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
+
+	for _, f := range fn {
+		if err := f(tx); err != nil {
+			if err1 := tx.Rollback(ctx); err1 != nil {
+				return fmt.Errorf("rolling back transaction: %w (original error: %v)", err1, err)
+			}
+			return err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("committing transaction: %v", err)
+	}
+	return nil
 }

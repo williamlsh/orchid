@@ -2,84 +2,108 @@ package auth
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
+	"strings"
 
 	"go.uber.org/zap"
 
+	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/request"
+	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
 	"github.com/ossm-org/orchid/pkg/cache"
 )
 
-// Refresher implements a token refresh handler.
-type Refresher struct {
+// refresher implements a token refresh handler.
+type refresher struct {
 	logger  *zap.SugaredLogger
 	cache   cache.Cache
 	secrets ConfigOptions
 }
 
-// NewRefresher returns a new Refresher.
-func NewRefresher(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) Refresher {
-	return Refresher{
+// newRefresher returns a new Refresher.
+func newRefresher(logger *zap.SugaredLogger, cache cache.Cache, secrets ConfigOptions) refresher {
+	return refresher{
 		logger,
 		cache,
 		secrets,
 	}
 }
 
-func (rf Refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	var reqBody struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
-	// Verify the token.
-	token, err := verifyToken(reqBody.RefreshToken, rf.secrets.RefreshSecret)
+func (rf refresher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	token, err := rf.parseTokenFromRequest(r)
 	// If there is an error, the token must have expired.
 	if err != nil {
-		http.Error(w, "Refresh token expired", http.StatusUnauthorized)
+		rf.logger.Errorf("failed to parse token: %v", err)
+
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
 	// Is token valid?
 	if !tokenValid(token) {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		httpx.FinalizeResponse(w, httpx.ErrAuthInvalidToken, nil)
 		return
 	}
 
-	idsInfo, err := extractTokenMetaData(token, kindRefreshCreds)
-	if errors.Is(err, ErrTokenExpired) {
-		http.Error(w, ErrRefreshTokenExpired.Error(), http.StatusUnauthorized)
-		return
-	}
+	// Extract token metadata. The error returned is invalid token.
+	refreshIDs, err := extractTokenMetaData(token, kindRefreshCreds)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		rf.logger.Errorf("failed to extract token metadata: %v", err)
+
+		httpx.FinalizeResponse(w, httpx.ErrAuthInvalidToken, nil)
 		return
 	}
 
-	// Delete the previous Refresh Token
-	deleted, err := rf.cache.Client.Del(idsInfo.UUID).Result()
-	if err != nil || deleted == 0 {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+	// Delete old creds from cache, if error occurs, creds may not exist in cache.
+	accessUUID := strings.Split(refreshIDs.UUID, "++")[0]
+	if err := deleteCredsFromCache(r.Context(), rf.cache, []string{accessUUID, refreshIDs.UUID}); err != nil {
+		rf.logger.Errorf("could not delete creds form cache: %v", err)
+
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
-	// Create new pairs of refresh and access tokens
-	credentials, err := createCreds(idsInfo.UserID, rf.secrets)
+
+	// Create new pairs of refresh and access tokens.
+	credentials, err := createCreds(refreshIDs.UserID, rf.secrets)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
-	// Save the tokens metadata to redis
-	if err := cacheCredential(idsInfo.UserID, credentials, rf.cache); err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
+	// Save the tokens metadata to redis.
+	if err := cacheCredential(r.Context(), rf.cache, refreshIDs.UserID, credentials); err != nil {
+		httpx.FinalizeResponse(w, httpx.ErrUnauthorized, nil)
 		return
 	}
-	if err := encodeCreds(w, credentials.AccessToken, credentials.RefreshToken, "Ok"); err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+
+	httpx.FinalizeResponse(w, httpx.Success, map[string]string{
+		"access_token":  credentials.AccessToken,
+		"refresh_token": credentials.RefreshToken,
+	})
+}
+
+// noop implements jwt request.Extractor interface.
+type noop struct{}
+
+func (n noop) ExtractToken(r *http.Request) (string, error) {
+	var reqBody struct {
+		RefreshToken string `json:"refresh_token"`
 	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		return "", err
+	}
+	return reqBody.RefreshToken, nil
+}
+
+func (rf refresher) parseTokenFromRequest(r *http.Request) (*jwt.Token, error) {
+	var bodyExtractor noop
+	return request.ParseFromRequest(
+		r,
+		bodyExtractor,
+		func(t *jwt.Token) (interface{}, error) {
+			return []byte(rf.secrets.RefreshSecret), nil
+		},
+		request.WithClaims(jwt.MapClaims{}),
+		request.WithParser(&jwt.Parser{
+			ValidMethods: []string{jwt.SigningMethodHS256.Alg()},
+		}),
+	)
 }
