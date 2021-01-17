@@ -57,33 +57,107 @@ func TestMiddleware(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequest(http.MethodGet, "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", creds.AccessToken))
+	t.Run("Must authenticate", func(t *testing.T) {
+		t.Parallel()
 
-	rr := httptest.NewRecorder()
+		req, err := http.NewRequest(http.MethodGet, "/", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", creds.AccessToken))
 
-	r := mux.NewRouter()
-	r.Use(amw.Middleware)
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		httpx.FinalizeResponse(w, httpx.Success, nil)
+		rr := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.Use(amw.MiddlewareMustAuthenticate)
+		r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			httpx.FinalizeResponse(w, httpx.Success, nil)
+		})
+		r.ServeHTTP(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v",
+				status, http.StatusOK)
+		}
+
+		var response httpx.FinalResponse
+		if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+			t.Fatal(err)
+		}
+		if response.Code != httpx.Success {
+			t.Errorf("returned: %s, want: %s", response.Code.Msg(), httpx.Success.Msg())
+		}
+
+		if amw.GetUserID() != 1 {
+			t.Fatalf("returned: %d, want: %d", amw.GetUserID(), 1)
+		}
 	})
-	r.ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
-	}
+	t.Run("Optionally authenticate", func(t *testing.T) {
+		t.Parallel()
 
-	var response httpx.FinalResponse
-	if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
-		t.Fatal(err)
-	}
-	if response.Code != httpx.Success {
-		t.Errorf("returned: %s, want: %s", response.Code.Msg(), httpx.Success.Msg())
-	}
+		req, err := http.NewRequest(http.MethodGet, "/", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", creds.AccessToken))
 
-	fmt.Printf("User-id: %d\n", amw.GetUserID())
+		rr := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.Use(amw.MiddlewareOptionallyAuthenticate)
+		r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			httpx.FinalizeResponse(w, httpx.Success, nil)
+		})
+		r.ServeHTTP(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v",
+				status, http.StatusOK)
+		}
+
+		var response httpx.FinalResponse
+		if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+			t.Fatal(err)
+		}
+		if response.Code != httpx.Success {
+			t.Errorf("returned: %s, want: %s", response.Code.Msg(), httpx.Success.Msg())
+		}
+
+		if amw.GetUserID() != 1 {
+			t.Fatalf("returned: %d, want: %d", amw.GetUserID(), 1)
+		}
+	})
+
+	t.Run("Nop authenticate", func(t *testing.T) {
+		t.Parallel()
+
+		req, err := http.NewRequest(http.MethodGet, "/", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", creds.AccessToken))
+
+		rr := httptest.NewRecorder()
+
+		r := mux.NewRouter()
+		r.Use(amw.MiddlewareOptionallyAuthenticate)
+		r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			httpx.FinalizeResponse(w, httpx.Success, nil)
+		})
+		r.ServeHTTP(rr, req)
+
+		if status := rr.Code; status != http.StatusOK {
+			t.Errorf("handler returned wrong status code: got %v want %v",
+				status, http.StatusOK)
+		}
+
+		var response httpx.FinalResponse
+		if err := json.NewDecoder(rr.Body).Decode(&response); err != nil {
+			t.Fatal(err)
+		}
+		if response.Code != httpx.Success {
+			t.Errorf("returned: %s, want: %s", response.Code.Msg(), httpx.Success.Msg())
+		}
+	})
 }
