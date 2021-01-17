@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.8"
 
 services:
   redis:
@@ -30,6 +30,10 @@ services:
       - "0.0.0.0"
       - "--frontend-service-port"
       - "8080"
+      - "--hostname"
+      - "api.overseastu.com"
+      - "--max-connections"
+      - "0"
       - "--redis-addr"
       - "redis:6379"
       - "--email-from"

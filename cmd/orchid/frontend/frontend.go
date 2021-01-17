@@ -77,6 +77,9 @@ var FrontendCmd = &cobra.Command{
 func init() {
 	FrontendCmd.PersistentFlags().StringVar(&frontendHost, "frontend-service-host", "0.0.0.0", "Frontend service host")
 	FrontendCmd.PersistentFlags().IntVar(&frontendPort, "frontend-service-port", 8080, "Frontend service port")
+	FrontendCmd.PersistentFlags().BoolVar(&frontendConfig.EnableTLS, "enable-tls", false, "Enable TLS server for frontend service")
+	FrontendCmd.PersistentFlags().StringVar(&frontendConfig.Hostname, "hostname", "example.com", "Host name for frontend TLS server")
+	FrontendCmd.PersistentFlags().IntVar(&frontendConfig.MaxConnections, "max-connections", 0, "Max connections for frontend server, 0 is unlimited")
 
 	FrontendCmd.PersistentFlags().StringVar(&cacheConfig.Addr, "redis-addr", "localhost:6379", "Redis server address")
 	FrontendCmd.PersistentFlags().StringVar(&cacheConfig.Passwd, "redis-passwd", "", "Redis server password")

@@ -23,6 +23,9 @@ type Service struct {
 
 // ConfigOptions provides all config options frontend service needs.
 type ConfigOptions struct {
+	EnableTLS        bool
+	MaxConnections   int    // Server max connections
+	Hostname         string // Host name for TlS server
 	FrontendHostPort string
 	AuthSecrets      auth.ConfigOptions
 	Email            email.ConfigOptions
@@ -46,7 +49,15 @@ func NewService(
 // Run starts the frontend server
 func (s *Service) Run() error {
 	mux := s.createServeMux()
-	return http.ListenAndServe(s.FrontendHostPort, mux)
+
+	server := NewServer(s.FrontendHostPort, mux)
+	server.MaxConnections = s.MaxConnections
+	if s.EnableTLS {
+		s.logger.Debugf("Enabled TLS, hostname=%s", s.Hostname)
+		server.GetCertificate(s.Hostname)
+	}
+	s.logger.Debugf("Server starts, addr=%s max-conn=%d", s.FrontendHostPort, s.MaxConnections)
+	return server.Start()
 }
 
 // createServeMux registers all routers.
