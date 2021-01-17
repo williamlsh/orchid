@@ -13,8 +13,8 @@ import (
 	"github.com/ossm-org/orchid/pkg/email"
 )
 
-// Server implements jaeger-demo-frontend service
-type Server struct {
+// Service implements jaeger-demo-frontend service
+type Service struct {
 	ConfigOptions
 	logger *zap.SugaredLogger
 	cache  cache.Cache
@@ -28,14 +28,14 @@ type ConfigOptions struct {
 	Email            email.ConfigOptions
 }
 
-// NewServer creates a new frontend.Server
-func NewServer(
+// NewService creates a new frontend.Server
+func NewService(
 	logger *zap.SugaredLogger,
 	cache cache.Cache,
 	db database.Database,
 	config ConfigOptions,
-) *Server {
-	return &Server{
+) *Service {
+	return &Service{
 		config,
 		logger,
 		cache,
@@ -44,13 +44,13 @@ func NewServer(
 }
 
 // Run starts the frontend server
-func (s *Server) Run() error {
+func (s *Service) Run() error {
 	mux := s.createServeMux()
 	return http.ListenAndServe(s.FrontendHostPort, mux)
 }
 
 // createServeMux registers all routers.
-func (s *Server) createServeMux() http.Handler {
+func (s *Service) createServeMux() http.Handler {
 	mux := mux.NewRouter()
 	mux.Use(s.Middleware)
 
@@ -68,7 +68,7 @@ func (s *Server) createServeMux() http.Handler {
 }
 
 // Middleware implements mux.Middleware. It's a general recovery middleware to catch all panics in every route.
-func (s *Server) Middleware(next http.Handler) http.Handler {
+func (s *Service) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {

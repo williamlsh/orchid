@@ -17,7 +17,7 @@ func TestMiddleware(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
-	s := Server{
+	s := Service{
 		logger: zap.NewExample().Sugar(),
 	}
 	r := s.createServeMux()

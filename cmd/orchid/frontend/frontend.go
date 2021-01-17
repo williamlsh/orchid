@@ -69,7 +69,7 @@ var FrontendCmd = &cobra.Command{
 			return err
 		}
 
-		server := frontend.NewServer(logger, cache, db, frontendConfig)
+		server := frontend.NewService(logger, cache, db, frontendConfig)
 		return server.Run()
 	},
 }
