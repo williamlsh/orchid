@@ -24,4 +24,8 @@ COPY --from=0 /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=0 /src/orchid /
 
+EXPOSE 8080 8081
+
+VOLUME ["/cert-cache"]
+
 ENTRYPOINT [ "/orchid" ]

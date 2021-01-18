@@ -78,6 +78,7 @@ func (srv *Server) Listen() (net.Listener, error) {
 }
 
 // GetCertificate injects auto cert from Let's Encrypt.
+// It also starts an HTTP server to serve Let's Encrypt's ACME challenge.
 func (srv *Server) GetCertificate(hosts ...string) {
 	certManager := autocert.Manager{
 		Prompt: autocert.AcceptTOS,
@@ -86,4 +87,6 @@ func (srv *Server) GetCertificate(hosts ...string) {
 		HostPolicy: autocert.HostWhitelist(hosts...),
 	}
 	srv.TLSConfig.GetCertificate = certManager.GetCertificate
+
+	go http.ListenAndServe(":8081", certManager.HTTPHandler(nil))
 }
