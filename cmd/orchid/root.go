@@ -13,7 +13,7 @@ var rootCmd = &cobra.Command{
 }
 
 func run() {
-	rootCmd.AddCommand(frontend.FrontendCmd)
+	rootCmd.AddCommand(frontend.Cmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
