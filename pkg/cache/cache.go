@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"go.uber.org/zap"
+	"github.com/ossm-org/orchid/pkg/logging"
 )
 
 const (
@@ -26,7 +26,9 @@ type ConfigOptions struct {
 }
 
 // New returns a new redis cache.
-func New(logger *zap.SugaredLogger, config *ConfigOptions) Cache {
+func New(ctx context.Context, config *ConfigOptions) Cache {
+	logger := logging.FromContext(ctx)
+
 	opts := &redis.Options{
 		Addr:     config.Addr,
 		Password: config.Passwd,

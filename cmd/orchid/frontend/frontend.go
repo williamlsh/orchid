@@ -15,6 +15,7 @@ import (
 	"github.com/ossm-org/orchid/pkg/database"
 	"github.com/ossm-org/orchid/pkg/email"
 	"github.com/ossm-org/orchid/pkg/logging"
+	"github.com/ossm-org/orchid/pkg/storage"
 	"github.com/ossm-org/orchid/services/frontend"
 )
 
@@ -36,10 +37,11 @@ var (
 	authSecrets    auth.ConfigOptions
 	emailConfig    email.ConfigOptions
 	frontendConfig frontend.ConfigOptions
+	storageConfig  storage.ConfigOptions
 )
 
-// FrontendCmd runs frontend service.
-var FrontendCmd = &cobra.Command{
+// Cmd runs frontend service.
+var Cmd = &cobra.Command{
 	Use:   "frontend",
 	Short: "Starts Frontend service",
 	Long:  `Starts Frontend service.`,
@@ -51,17 +53,22 @@ var FrontendCmd = &cobra.Command{
 		frontendConfig.AuthSecrets = authSecrets
 		frontendConfig.Email = emailConfig
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		logger := logging.NewLogger(logLevel, logDevelopment)
 		defer logger.Sync()
 
-		cache := cache.New(logger, &cacheConfig)
+		ctx = logging.WithLogger(ctx, logger)
+
+		cache := cache.New(ctx, &cacheConfig)
 		defer cache.Client.Close()
 
-		db := database.New(logger, dsn)
+		storage := storage.New(ctx, storageConfig)
+
+		db := database.New(ctx, dsn)
 		defer db.Pool.Close()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
 		if err := db.Migrate(ctx); err != nil {
 			return err
 		}
@@ -69,37 +76,42 @@ var FrontendCmd = &cobra.Command{
 			return err
 		}
 
-		server := frontend.NewServer(logger, cache, db, frontendConfig)
+		server := frontend.NewServer(logger, cache, db, storage, frontendConfig)
 		return server.Run()
 	},
 }
 
 func init() {
-	FrontendCmd.PersistentFlags().StringVar(&frontendHost, "frontend-service-host", "0.0.0.0", "Frontend service host")
-	FrontendCmd.PersistentFlags().IntVar(&frontendPort, "frontend-service-port", 8080, "Frontend service port")
+	Cmd.PersistentFlags().StringVar(&frontendHost, "frontend-service-host", "0.0.0.0", "Frontend service host")
+	Cmd.PersistentFlags().IntVar(&frontendPort, "frontend-service-port", 8080, "Frontend service port")
 
-	FrontendCmd.PersistentFlags().StringVar(&cacheConfig.Addr, "redis-addr", "localhost:6379", "Redis server address")
-	FrontendCmd.PersistentFlags().StringVar(&cacheConfig.Passwd, "redis-passwd", "", "Redis server password")
+	Cmd.PersistentFlags().StringVar(&cacheConfig.Addr, "redis-addr", "localhost:6379", "Redis server address")
+	Cmd.PersistentFlags().StringVar(&cacheConfig.Passwd, "redis-passwd", "", "Redis server password")
 
-	FrontendCmd.PersistentFlags().StringVar(&emailConfig.From, "email-from", "abc@gmail.com", "Email from address")
-	FrontendCmd.PersistentFlags().StringVar(&emailConfig.Host, "smtp-server-host", "", "Smtp server host")
-	FrontendCmd.PersistentFlags().IntVar(&emailConfig.Port, "smtp-server-port", 25, "Smtp server port")
-	FrontendCmd.PersistentFlags().StringVar(&emailConfig.Username, "email-username", "abc", "Email username")
-	FrontendCmd.PersistentFlags().StringVar(&emailConfig.Passwd, "email-passwd", "123abc", "Email password")
+	Cmd.PersistentFlags().StringVar(&emailConfig.From, "email-from", "abc@gmail.com", "Email from address")
+	Cmd.PersistentFlags().StringVar(&emailConfig.Host, "smtp-server-host", "", "Smtp server host")
+	Cmd.PersistentFlags().IntVar(&emailConfig.Port, "smtp-server-port", 25, "Smtp server port")
+	Cmd.PersistentFlags().StringVar(&emailConfig.Username, "email-username", "abc", "Email username")
+	Cmd.PersistentFlags().StringVar(&emailConfig.Passwd, "email-passwd", "123abc", "Email password")
 
-	FrontendCmd.PersistentFlags().StringVar(&authSecrets.AccessSecret, "auth-access-secret", "123abc", "Authentication access secret")
-	FrontendCmd.PersistentFlags().StringVar(&authSecrets.RefreshSecret, "auth-refresh-secret", "123abc", "Authentication refresh secret")
+	Cmd.PersistentFlags().StringVar(&authSecrets.AccessSecret, "auth-access-secret", "123abc", "Authentication access secret")
+	Cmd.PersistentFlags().StringVar(&authSecrets.RefreshSecret, "auth-refresh-secret", "123abc", "Authentication refresh secret")
 
-	FrontendCmd.PersistentFlags().StringVar(&pgUser, "pg-user", "", "postgreSQL database username")
-	FrontendCmd.PersistentFlags().StringVar(&pgPass, "pg-passwd", "", "postgreSQL database password")
-	FrontendCmd.PersistentFlags().StringVar(&pgDbname, "pg-dbname", "", "postgreSQL database name")
-	FrontendCmd.PersistentFlags().StringVar(&pgHost, "pg-host", "", "postgreSQL database host")
-	FrontendCmd.PersistentFlags().IntVar(&pgPort, "pg-port", 5432, "postgreSQL database port")
-	FrontendCmd.PersistentFlags().StringVar(&pgSslmode, "pg-sslmode", "disable", "postgreSQL database sslmode")
-	FrontendCmd.PersistentFlags().IntVar(&pgMaxConn, "pg-pool-max-conn", 10, "postgreSQL database pool max connections")
+	Cmd.PersistentFlags().StringVar(&pgUser, "pg-user", "", "postgreSQL database username")
+	Cmd.PersistentFlags().StringVar(&pgPass, "pg-passwd", "", "postgreSQL database password")
+	Cmd.PersistentFlags().StringVar(&pgDbname, "pg-dbname", "", "postgreSQL database name")
+	Cmd.PersistentFlags().StringVar(&pgHost, "pg-host", "", "postgreSQL database host")
+	Cmd.PersistentFlags().IntVar(&pgPort, "pg-port", 5432, "postgreSQL database port")
+	Cmd.PersistentFlags().StringVar(&pgSslmode, "pg-sslmode", "disable", "postgreSQL database sslmode")
+	Cmd.PersistentFlags().IntVar(&pgMaxConn, "pg-pool-max-conn", 10, "postgreSQL database pool max connections")
 
-	FrontendCmd.PersistentFlags().StringVar(&logLevel, "log-level", "error", "Log level")
-	FrontendCmd.PersistentFlags().BoolVar(&logDevelopment, "log-development", false, "Log development")
+	Cmd.PersistentFlags().StringVar(&logLevel, "log-level", "error", "Log level")
+	Cmd.PersistentFlags().BoolVar(&logDevelopment, "log-development", false, "Log development")
+
+	Cmd.PersistentFlags().StringVar(&storageConfig.Endpoint, "minio-endpoint", "127.0.0.1:9000", "Minio endpoint")
+	Cmd.PersistentFlags().StringVar(&storageConfig.ID, "minio-id", "", "Minio ID")
+	Cmd.PersistentFlags().StringVar(&storageConfig.Secret, "minio-secret", "", "Minio secret")
+	Cmd.PersistentFlags().BoolVar(&storageConfig.Secure, "minio-enable-secure", false, "Enable minio secure connection")
 
 	rand.Seed(int64(time.Now().Nanosecond()))
 }

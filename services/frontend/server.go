@@ -7,18 +7,21 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ossm-org/orchid/pkg/apis/auth"
+	"github.com/ossm-org/orchid/pkg/apis/upload/v1"
 	"github.com/ossm-org/orchid/pkg/apis/users"
 	"github.com/ossm-org/orchid/pkg/cache"
 	"github.com/ossm-org/orchid/pkg/database"
 	"github.com/ossm-org/orchid/pkg/email"
+	"github.com/ossm-org/orchid/pkg/storage"
 )
 
 // Server implements jaeger-demo-frontend service
 type Server struct {
 	ConfigOptions
-	logger *zap.SugaredLogger
-	cache  cache.Cache
-	db     database.Database
+	logger  *zap.SugaredLogger
+	cache   cache.Cache
+	db      database.Database
+	storage storage.S3Client
 }
 
 // ConfigOptions provides all config options frontend service needs.
@@ -33,6 +36,7 @@ func NewServer(
 	logger *zap.SugaredLogger,
 	cache cache.Cache,
 	db database.Database,
+	storage storage.S3Client,
 	config ConfigOptions,
 ) *Server {
 	return &Server{
@@ -40,6 +44,7 @@ func NewServer(
 		logger,
 		cache,
 		db,
+		storage,
 	}
 }
 
@@ -63,6 +68,10 @@ func (s *Server) createServeMux() http.Handler {
 	// Routers of users. They are under /api/user
 	userRouter := r.PathPrefix("/user").Subrouter()
 	users.Group(s.logger, s.cache, s.db, s.Email, s.AuthSecrets, userRouter)
+
+	// Routers of upload. They are under /api/upload
+	uploadRouter := r.PathPrefix("/upload").Subrouter()
+	upload.Group(s.logger, s.cache, s.storage, s.AuthSecrets, uploadRouter)
 
 	return mux
 }

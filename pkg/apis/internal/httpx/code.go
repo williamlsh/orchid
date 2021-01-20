@@ -29,6 +29,8 @@ const (
 
 	ErrUsernameAlreadyInUse
 
+	ErrUploadEmptyChecksum
+
 	ErrServiceUnavailable
 )
 
@@ -51,6 +53,7 @@ var Msgs = map[Code]string{
 	ErrAuthTokenExpired:            "Token expired",
 	ErrAuthEmailAlreadyInUse:       "User email already in use",
 	ErrUsernameAlreadyInUse:        "Username already in use",
+	ErrUploadEmptyChecksum:         "Empty upload file checksum",
 
 	ErrServiceUnavailable: " Service unavailable",
 }
