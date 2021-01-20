@@ -51,17 +51,20 @@ var FrontendCmd = &cobra.Command{
 		frontendConfig.AuthSecrets = authSecrets
 		frontendConfig.Email = emailConfig
 
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		logger := logging.NewLogger(logLevel, logDevelopment)
 		defer logger.Sync()
 
-		cache := cache.New(logger, &cacheConfig)
+		ctx = logging.WithLogger(ctx, logger)
+
+		cache := cache.New(ctx, &cacheConfig)
 		defer cache.Client.Close()
 
-		db := database.New(logger, dsn)
+		db := database.New(ctx, dsn)
 		defer db.Pool.Close()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		defer cancel()
 		if err := db.Migrate(ctx); err != nil {
 			return err
 		}

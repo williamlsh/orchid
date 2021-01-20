@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/log/zapadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/ossm-org/orchid/pkg/logging"
 	"go.uber.org/zap"
 )
 
@@ -17,15 +18,9 @@ type Database struct {
 }
 
 // New returns a new database.
-func New(logger *zap.SugaredLogger, dsn string) Database {
-	return Database{
-		Pool:   newPool(logger, dsn),
-		logger: logger,
-	}
-}
+func New(ctx context.Context, dsn string) Database {
+	logger := logging.FromContext(ctx)
 
-// newPool returns a new postgres connection pool.
-func newPool(logger *zap.SugaredLogger, dsn string) *pgxpool.Pool {
 	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		panic(err)
@@ -33,12 +28,15 @@ func newPool(logger *zap.SugaredLogger, dsn string) *pgxpool.Pool {
 
 	poolConfig.ConnConfig.Logger = zapadapter.NewLogger(logger.Desugar())
 
-	pool, err := pgxpool.ConnectConfig(context.Background(), poolConfig)
+	pool, err := pgxpool.ConnectConfig(ctx, poolConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	return pool
+	return Database{
+		Pool:   pool,
+		logger: logger,
+	}
 }
 
 // InTx runs the given function f within a transaction with isolation level serialization by default.
