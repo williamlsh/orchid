@@ -2,7 +2,10 @@ package storage
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"os"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -56,4 +59,12 @@ func (c S3Client) PrepareBuckets(ctx context.Context, buckets ...string) error {
 		}
 	}
 	return nil
+}
+
+// PresignedGetObjectImage returns a presigned object image URL to client.
+func (c S3Client) PresignedGetObjectImage(ctx context.Context, bucketName string, objectName string, expires time.Duration) (u *url.URL, err error) {
+	// Set request parameters
+	reqParams := make(url.Values)
+	reqParams.Set("response-content-disposition", fmt.Sprintf("attachment; filename=\"%s\"", objectName))
+	return c.PresignedGetObject(ctx, bucketName, objectName, expires, reqParams)
 }

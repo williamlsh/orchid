@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -20,45 +21,68 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestS3Client(t *testing.T) {
-	ctx := logging.WithLogger(context.Background(), zap.NewExample().Sugar())
+var (
+	s3Client S3Client
+	ctx      context.Context
+
+	path = "../../Makefile"
+)
+
+func TestMain(m *testing.M) {
+	endpoint := flag.String("endpoint", "", "Minio endpoint")
+	accessID := flag.String("id", "", "Minio access id")
+	secret := flag.String("secret", "", "Minio secret")
+	secure := flag.Bool("secure", false, "Use secure Minio connection")
+	flag.Parse()
+
+	ctx = logging.WithLogger(context.Background(), zap.NewExample().Sugar())
 
 	// Start a Minio service before run this test.
-	s3Client := New(ctx, ConfigOptions{
-		Endpoint: "127.0.0.1:9000",
-		ID:       "AKIAIOSFODNN7EXAMPLE",
-		Secret:   "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
-		Secure:   false,
+	s3Client = New(ctx, ConfigOptions{
+		Endpoint: *endpoint,
+		ID:       *accessID,
+		Secret:   *secret,
+		Secure:   *secure,
 	})
 
+	os.Exit(m.Run())
+}
+
+// In repo root, run:
+// go test -run=TestS3Client ./pkg/storage -race -v storage -args -endpoint="" -id="" -secret="" -secure
+func TestS3Client(t *testing.T) {
 	// Create bucket.
-	bucketName := "my-bucketname"
-	objectName := "my-objectname"
+	bucketName := "lovely"
+	objectName := "sweet"
 	if err := s3Client.PrepareBuckets(ctx, bucketName); err != nil {
 		t.Fatal(err)
 	}
 
-	// Prepare object.
-	object, err := os.Open("../../Makefile")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer object.Close()
+	var size int64
 
-	objectStat, err := object.Stat()
-	if err != nil {
-		t.Fatal(err)
-	}
-	size := objectStat.Size()
+	t.Run("Put object", func(t *testing.T) {
+		// Prepare object.
+		object, err := os.Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer object.Close()
 
-	// Store object in bucket.
-	result, err := s3Client.PutObject(ctx, bucketName, objectName, object, size, minio.PutObjectOptions{
-		ContentType: "text/plain",
+		objectStat, err := object.Stat()
+		if err != nil {
+			t.Fatal(err)
+		}
+		size = objectStat.Size()
+
+		// Store object in bucket.
+		result, err := s3Client.PutObject(ctx, bucketName, objectName, object, size, minio.PutObjectOptions{
+			ContentType: "text/plain",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("Uploaded=%s result=%+v\n", objectName, result)
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Printf("Uploaded=%s result=%+v\n", objectName, result)
 
 	t.Run("get object from presigned url", func(t *testing.T) {
 		// Retrieve object in bucket.
@@ -97,7 +121,6 @@ func TestS3Client(t *testing.T) {
 		}
 		fmt.Println("Presigned URL:", presignedURL)
 
-		path := "../../Makefile"
 		file, err := os.Open(path)
 		if err != nil {
 			t.Fatal(err)
