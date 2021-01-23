@@ -63,10 +63,19 @@ services:
     ports:
       - "8080:8080"
     container_name: orchid
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
     restart: on-failure
     depends_on:
       - redis
       - postgres
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
 
 volumes:
   db-data:
