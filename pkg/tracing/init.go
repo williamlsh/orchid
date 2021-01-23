@@ -43,9 +43,13 @@ func Init(serviceName string, metricsFactory metrics.Factory, logger *zap.Sugare
 var _ jaeger.Logger = jaegerLoggerAdapter{}
 
 type jaegerLoggerAdapter struct {
-	*zap.SugaredLogger
+	logger *zap.SugaredLogger
 }
 
 func (l jaegerLoggerAdapter) Error(msg string) {
-	l.Error(msg)
+	l.logger.Error(msg)
+}
+
+func (l jaegerLoggerAdapter) Infof(msg string, args ...interface{}) {
+	l.logger.Infof(msg, args...)
 }

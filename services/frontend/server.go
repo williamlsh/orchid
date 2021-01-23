@@ -80,7 +80,10 @@ func (s *Server) createServeMux() http.Handler {
 
 	// Opentracing for mux.
 	r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
-		route.Handler(tracing.Middleware(s.tracer, route.GetHandler(), nethttp.MWComponentName("frontend")))
+		h := route.GetHandler()
+		if h != nil {
+			route.Handler(tracing.Middleware(s.tracer, route.GetHandler(), nethttp.MWComponentName("frontend")))
+		}
 		return nil
 	})
 

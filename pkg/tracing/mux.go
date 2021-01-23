@@ -22,7 +22,6 @@ func Middleware(tr opentracing.Tracer, h http.Handler, options ...nethttp.MWOpti
 		nethttp.OperationNameFunc(opNameFunc),
 		nethttp.MWSpanObserver(func(span opentracing.Span, r *http.Request) {
 			span.SetTag("http.remote-address", r.RemoteAddr)
-			span.SetTag("http.uri", r.URL.EscapedPath())
 			span.SetTag("http.content-type", r.Header.Get("Content-Type"))
 			span.SetTag("http.content-length", r.Header.Get("Content-Length"))
 		}),
