@@ -16,7 +16,10 @@ import (
 	"github.com/ossm-org/orchid/pkg/email"
 	"github.com/ossm-org/orchid/pkg/logging"
 	"github.com/ossm-org/orchid/pkg/storage"
+	"github.com/ossm-org/orchid/pkg/tracing"
 	"github.com/ossm-org/orchid/services/frontend"
+	"github.com/uber/jaeger-lib/metrics"
+	jprom "github.com/uber/jaeger-lib/metrics/prometheus"
 )
 
 var (
@@ -76,7 +79,8 @@ var Cmd = &cobra.Command{
 			return err
 		}
 
-		server := frontend.NewServer(logger, cache, db, storage, frontendConfig)
+		tracer := tracing.Init("frontend", jprom.New().Namespace(metrics.NSOptions{Name: "frontend", Tags: nil}), logger)
+		server := frontend.NewServer(logger, tracer, cache, db, storage, frontendConfig)
 		return server.Run()
 	},
 }
