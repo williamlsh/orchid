@@ -1,4 +1,4 @@
-# Orchid for OSSM monolithic server
+# An unfinished project, Orchid
 
 ## How to run
 
