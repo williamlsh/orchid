@@ -1,0 +1,127 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - $PWD/db/redis:/data
+    restart: on-failure
+
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: on-failure
+
+  orchid:
+    image: repo.treescale.com/overseastu/orchid:latest
+    command:
+      - "frontend"
+      - "--log-level"
+      - "${LOG_LEVEL:-error}"
+      - "--log-development"
+      - "${LOG_DEVELOPMENT:-false}"
+      - "--frontend-service-host"
+      - "0.0.0.0"
+      - "--frontend-service-port"
+      - "8080"
+      - "--redis-addr"
+      - "redis:6379"
+      - "--email-from"
+      - "${EMAIL_FROM}"
+      - "--email-passwd"
+      - "${EMAIL_PASSWORD}"
+      - "--email-username"
+      - "${EMAIL_USERNAME}"
+      - "--smtp-server-host"
+      - "${SMTP_SERVER_HOST}"
+      - "--smtp-server-port"
+      - "${SMTP_SERVER_PORT:-25}"
+      - "--auth-access-secret"
+      - "${ACCESS_SECRET:-abc}"
+      - "--auth-refresh-secret"
+      - "${REFRESH_SECRET:-xyz}"
+      - "--pg-dbname"
+      - "postgres"
+      - "--pg-host"
+      - "postgres"
+      - "--pg-passwd"
+      - "password"
+      - "--pg-pool-max-conn"
+      - "10"
+      - "--pg-port"
+      - "5432"
+      - "--pg-sslmode"
+      - "disable"
+      - "--pg-user"
+      - "postgres"
+    ports:
+      - "8080:8080"
+    container_name: orchid
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+    restart: on-failure
+    depends_on:
+      - redis
+      - postgres
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/api/prom/push"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/api/prom/push"
+
+  loki:
+    image: grafana/loki:master
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    # send Loki traces to Jaeger
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - JAEGER_SAMPLER_TYPE=const
+      - JAEGER_SAMPLER_PARAM=1
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/api/prom/push"
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/api/prom/push"
+
+volumes:
+  db-data:
