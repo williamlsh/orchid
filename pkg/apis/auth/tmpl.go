@@ -127,7 +127,7 @@ const loginTpl = `
 <body>
     <div id="container">
         <div class="form-wrap">
-            <h1 class="big-logo-head">overseastu</h1>
+            <h1 class="big-logo-head">example</h1>
             <br />
             <h2>You're almost there</h2>
             <p>
@@ -136,7 +136,7 @@ const loginTpl = `
             <p>This link will expire in 2 hours and can only be used once.</p>
             <form>
                 <div class="form-group">
-                    <a href="{{.URL}}">Sign in to Overseastu</a>
+                    <a href="{{.URL}}">Sign in to Example</a>
                 </div>
                 <p class="bottom-text">
                     If the button above doesn’t work, paste this link into your web
@@ -149,7 +149,7 @@ const loginTpl = `
             </p>
             <hr />
             <p class="bottom-text">
-                Sent by Overseastu
+                Sent by Example
                 <br />
                 <a class="small-footer" href="#">· Careers</a>
                 <a class="small-footer" href="#">· Help center</a>
@@ -268,12 +268,12 @@ const registerTpl = `
 <body>
     <div id="container">
         <div class="form-wrap">
-            <h1 class="big-logo-head">overseastu</h1>
+            <h1 class="big-logo-head">example</h1>
             <br />
             <h2>You're almost there</h2>
             <p>
                 Click the link below to confirm your email and finish creating your
-                Overseastu account.
+                Example account.
             </p>
             <p>This link will expire in 2 hours and can only be used once.</p>
             <form>
@@ -291,7 +291,7 @@ const registerTpl = `
             </p>
             <hr />
             <p class="bottom-text">
-                Sent by Overseastu
+                Sent by Example
                 <br />
                 <a class="small-footer" href="#">· Careers</a>
                 <a class="small-footer" href="#">· Help center</a>

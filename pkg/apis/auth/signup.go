@@ -209,15 +209,15 @@ func isEmailValid(e string) bool {
 }
 
 func composeEmail(isNewUser bool, code string) (subject string, content string, err error) {
-	url := "https://overseastu.com/m/callback?token=%s&operation=%s&state=overseastu"
+	url := "https://example.com/m/callback?token=%s&operation=%s&state=example"
 	if isNewUser {
-		subject = "Finish creating your account on Overseastu"
+		subject = "Finish creating your account on Example"
 		regURL := fmt.Sprintf(url, code, "register")
 		content, err = renderEmail(registerTpl, data{
 			URL: template.URL(regURL),
 		})
 	} else {
-		subject = "Sign in to Overseastu"
+		subject = "Sign in to Example"
 		logURL := fmt.Sprintf(url, code, "login")
 		content, err = renderEmail(loginTpl, data{
 			URL: template.URL(logURL),

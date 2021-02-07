@@ -6,7 +6,7 @@ curl "localhost:8080/api/signup" \
     -vv \
     -X POST \
     -H "Content-Type:application/json" \
-    -d '{"email": "overseas-stu@outlook.com"}'
+    -d '{"email": "example@outlook.com"}'
 ## Response:
 # {"code":0,"message":"Success"}
 ## Mail content: http://localhost/m/callback?token=wxcjwAuZCkCj&operation=login&state=overseatu
@@ -79,7 +79,7 @@ curl "localhost:8080/api/account" \
     -X POST \
     -H "Content-Type:application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6ImJiN2JlODZhLTMxM2UtNDU2Yi04MzI2LTQyNDYxMzM0ZWE4MSIsImF1dGhvcml6ZWQiOnRydWUsImV4cCI6MTYxMDgwOTI0MCwidXNlcl9pZCI6MTE3NjUzOTcyfQ.HS6Xuo4CzOcc7rdEhc8i6SmrWi6pWH6mgt63u1vC2WU" \
-    -d '{"email": "overseas-stu@outlook.com"}'
+    -d '{"email": "example@outlook.com"}'
 
 ## Response:
 # {"code":0,"message":"Success"}
@@ -97,8 +97,8 @@ curl "localhost:8080/api/user/profile" \
 #   "code": 0,
 #   "message": "Success",
 #   "data": {
-#     "username": "overseas-stu",
-#     "email": "overseas-stu@outlook.com"
+#     "username": "example",
+#     "email": "example@outlook.com"
 #   }
 # }
 
@@ -111,7 +111,7 @@ curl "localhost:8080/api/user/profile" \
     -X POST \
     -H "Content-Type:application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NfdXVpZCI6ImE4ZmVlMmRmLTAzY2UtNDBjMC1iNWVlLTg1Yzk0YzU5ZjliZiIsImF1dGhvcml6ZWQiOnRydWUsImV4cCI6MTYxMDgxMTE3MCwidXNlcl9pZCI6MTE3NjUzOTcyfQ.BXXnQVP-5RGh8WozyI0KaUO574OvrFpFED3Byni_50E" \
-    -d '{"username": "overseas-stu2"}'
+    -d '{"username": "example2"}'
 
 ## Response:
 # {"code":0,"message":"Success"}
