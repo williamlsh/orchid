@@ -19,7 +19,7 @@ services:
     restart: on-failure
 
   orchid:
-    image: repo.treescale.com/overseastu/orchid:latest
+    image: repo.treescale.com/williamlsh/orchid:latest
     command:
       - "frontend"
       - "--log-level"
