@@ -17,7 +17,7 @@ jobs:
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: repo.treescale.com/${{ secrets.TREESCALE_USERNAME }}/orchid
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/orchid
           tag-sha: true
           tag-custom: latest
       - uses: docker/setup-buildx-action@v1
@@ -28,12 +28,11 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
-      - name: Login to TreeScale
+      - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
-          registry: repo.treescale.com
-          username: ${{ secrets.TREESCALE_USERNAME }}
-          password: ${{ secrets.TREESCALE_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
