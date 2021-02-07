@@ -11,7 +11,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/ossm-org/orchid/pkg/cache"
+	"github.com/williamlsh/orchid/pkg/cache"
 )
 
 const (

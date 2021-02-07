@@ -6,7 +6,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/ossm-org/orchid/pkg/logging"
+	"github.com/williamlsh/orchid/pkg/logging"
 	"go.uber.org/zap"
 )
 

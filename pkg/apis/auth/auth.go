@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ossm-org/orchid/pkg/cache"
-	"github.com/ossm-org/orchid/pkg/database"
-	"github.com/ossm-org/orchid/pkg/email"
+	"github.com/williamlsh/orchid/pkg/cache"
+	"github.com/williamlsh/orchid/pkg/database"
+	"github.com/williamlsh/orchid/pkg/email"
 	"go.uber.org/zap"
 )
 

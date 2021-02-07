@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/ossm-org/orchid/pkg/logging"
 	"github.com/stretchr/testify/assert"
+	"github.com/williamlsh/orchid/pkg/logging"
 	"go.uber.org/zap"
 )
 

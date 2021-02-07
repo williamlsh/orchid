@@ -7,9 +7,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
-	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
-	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
-	"github.com/ossm-org/orchid/pkg/cache"
+	"github.com/williamlsh/orchid/pkg/apis/internal/confuse"
+	"github.com/williamlsh/orchid/pkg/apis/internal/httpx"
+	"github.com/williamlsh/orchid/pkg/cache"
 	"go.uber.org/zap"
 )
 

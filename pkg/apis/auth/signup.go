@@ -15,10 +15,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
-	"github.com/ossm-org/orchid/pkg/cache"
-	"github.com/ossm-org/orchid/pkg/database"
-	"github.com/ossm-org/orchid/pkg/email"
+	"github.com/williamlsh/orchid/pkg/apis/internal/httpx"
+	"github.com/williamlsh/orchid/pkg/cache"
+	"github.com/williamlsh/orchid/pkg/database"
+	"github.com/williamlsh/orchid/pkg/email"
 )
 
 const (

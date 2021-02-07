@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ossm-org/orchid/cmd/orchid/frontend"
+	"github.com/williamlsh/orchid/cmd/orchid/frontend"
 )
 
 var rootCmd = &cobra.Command{

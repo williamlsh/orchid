@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v4"
-	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
-	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
-	"github.com/ossm-org/orchid/pkg/cache"
-	"github.com/ossm-org/orchid/pkg/database"
+	"github.com/williamlsh/orchid/pkg/apis/internal/confuse"
+	"github.com/williamlsh/orchid/pkg/apis/internal/httpx"
+	"github.com/williamlsh/orchid/pkg/cache"
+	"github.com/williamlsh/orchid/pkg/database"
 	"go.uber.org/zap"
 )
 

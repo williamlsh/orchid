@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/log/zapadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/ossm-org/orchid/pkg/logging"
+	"github.com/williamlsh/orchid/pkg/logging"
 	"go.uber.org/zap"
 )
 

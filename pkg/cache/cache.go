@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/ossm-org/orchid/pkg/logging"
+	"github.com/williamlsh/orchid/pkg/logging"
 	"go.uber.org/zap"
 )
 

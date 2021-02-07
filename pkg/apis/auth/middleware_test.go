@@ -11,9 +11,9 @@ import (
 	"github.com/alicebob/miniredis"
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
-	"github.com/ossm-org/orchid/pkg/apis/internal/confuse"
-	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
-	"github.com/ossm-org/orchid/pkg/cache"
+	"github.com/williamlsh/orchid/pkg/apis/internal/confuse"
+	"github.com/williamlsh/orchid/pkg/apis/internal/httpx"
+	"github.com/williamlsh/orchid/pkg/cache"
 	"go.uber.org/zap"
 )
 

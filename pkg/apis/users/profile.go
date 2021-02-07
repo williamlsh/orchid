@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/ossm-org/orchid/pkg/apis/auth"
-	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
-	"github.com/ossm-org/orchid/pkg/database"
+	"github.com/williamlsh/orchid/pkg/apis/auth"
+	"github.com/williamlsh/orchid/pkg/apis/internal/httpx"
+	"github.com/williamlsh/orchid/pkg/database"
 	"go.uber.org/zap"
 )
 

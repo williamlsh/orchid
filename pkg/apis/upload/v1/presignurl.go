@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ossm-org/orchid/pkg/apis/internal/httpx"
-	"github.com/ossm-org/orchid/pkg/storage"
+	"github.com/williamlsh/orchid/pkg/apis/internal/httpx"
+	"github.com/williamlsh/orchid/pkg/storage"
 	"go.uber.org/zap"
 )
 

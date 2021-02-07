@@ -1,4 +1,4 @@
-module github.com/ossm-org/orchid
+module github.com/williamlsh/orchid
 
 go 1.15
 
