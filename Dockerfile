@@ -1,4 +1,6 @@
-FROM golang:1.15-alpine
+FROM golang:1.16-alpine
+
+LABEL org.opencontainers.image.source=https://github.com/williamlsh/orchid
 
 RUN apk update && apk add --no-cache \
     git \
