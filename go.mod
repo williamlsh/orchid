@@ -16,6 +16,7 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pjebs/optimus-go v1.0.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/speps/go-hashids v2.0.0+incompatible
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.7.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
