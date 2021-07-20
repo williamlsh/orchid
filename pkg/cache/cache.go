@@ -51,7 +51,7 @@ func New(ctx context.Context, config *ConfigOptions) Cache {
 // Compile time interface check.
 var _ interface {
 	Printf(ctx context.Context, format string, v ...interface{})
-} = redisLoggerAdapter{}
+} = (*redisLoggerAdapter)(nil)
 
 // redisLoggerAdapter implements redis internal Logging interface.
 type redisLoggerAdapter struct {

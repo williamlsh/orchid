@@ -40,7 +40,7 @@ func Init(serviceName string, metricsFactory metrics.Factory, logger *zap.Sugare
 }
 
 // Compile time interface check.
-var _ jaeger.Logger = jaegerLoggerAdapter{}
+var _ jaeger.Logger = (*jaegerLoggerAdapter)(nil)
 
 type jaegerLoggerAdapter struct {
 	logger *zap.SugaredLogger
