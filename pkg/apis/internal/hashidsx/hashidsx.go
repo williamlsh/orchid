@@ -42,10 +42,5 @@ func hashid() *hashids.HashID {
 	hd.Salt = salt
 	hd.MinLength = minLength
 
-	h, err := hashids.NewWithData(hd)
-	if err != nil {
-		panic(err)
-	}
-
-	return h
+	return hashids.NewWithData(hd)
 }
