@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/willf/bitset"
+	"github.com/bits-and-blooms/bitset"
 )
 
 func TestEncodeID_DecodeID(t *testing.T) {
