@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/request"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v4/request"
 	"github.com/williamlsh/orchid/pkg/apis/internal/confuse"
 	"github.com/williamlsh/orchid/pkg/apis/internal/httpx"
 	"github.com/williamlsh/orchid/pkg/cache"

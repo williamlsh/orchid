@@ -8,8 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/request"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v4/request"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v4"
 	"github.com/williamlsh/orchid/pkg/apis/internal/confuse"
